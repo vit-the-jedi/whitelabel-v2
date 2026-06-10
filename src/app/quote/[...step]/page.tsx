@@ -34,6 +34,8 @@ export default async function StepPage({
 
   const { step } = await params;
 
+  console.log({ domainHeader, brand, step }); // DEBUG
+
   const config = await getFlowConfig(brand);
 
   // console.log({ domainHeader, brand, step, config });

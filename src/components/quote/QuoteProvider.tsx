@@ -45,7 +45,8 @@ import {
   type FlowState,
 } from "@/lib/flow/machine";
 import { resolvers } from "@/lib/flow/resolvers";
-import type { AnswerMap } from "@/lib/flow/types";
+import { LoaderResult, loaders } from "@/lib/flow/loaders";
+import type { AnswerMap, LoaderKind } from "@/lib/flow/types";
 
 /* ------------------------------------------------------------------ */
 /* Contexts                                                            */
@@ -60,6 +61,7 @@ type FlowActions = {
   goBack: () => void;
   /** Edit-from-review: jump to an already-completed step. */
   jumpTo: (stepId: string) => void;
+  load: (answers: AnswerMap) => Promise<LoaderResult>;
 };
 
 const FlowActionsContext = createContext<FlowActions | null>(null);
@@ -77,6 +79,45 @@ export function QuoteProvider({
 }) {
   const [state, dispatch] = useReducer(flowReducer, initialState);
   const router = useRouter();
+
+  const load = useCallback<FlowActions["load"]>(
+    async (stepAnswers) => {
+      const step = state.config.steps[state.currentStepId];
+      const merged = { ...state.answers, ...stepAnswers };
+      if (step.load) {
+        console.log(
+          "[QuoteProvider] step load:",
+          state.currentStepId,
+          step.load,
+        );
+        dispatch({ type: "BEGIN_LOAD" });
+        try {
+          const { options, data } = await loaders[step.load](merged);
+          if (options) {
+            dispatch({ type: "SET_FIELD_OPTIONS", options });
+          }
+          if (data) {
+            dispatch({
+              type: "SET_FIELD_DATA",
+              fieldData: Object.entries(data).map(([key, value]) => ({
+                [key]: value,
+              })),
+            });
+          }
+          return {};
+        } catch (err) {
+          console.log("Loader error", err);
+          const message =
+            err instanceof Error ? err.message : "Something went wrong.";
+          dispatch({ type: "LOAD_ERROR", error: message });
+          // Sentry.captureException(err) — this branch is your error hook.
+          return { errors: {} }; // submit was valid; the load failed
+        }
+      }
+      return {}; // stub; implement when you have a real loader
+    },
+    [state, router],
+  );
 
   // Fire-and-forget draft persistence. Replace with a debounced PATCH to your
   // draft store keyed by quoteId — this is the refresh/resume safety net.
@@ -99,6 +140,11 @@ export function QuoteProvider({
 
       // 3. Async resolve, if the step has one (rater, company info, ...).
       let finalAnswers = merged;
+      console.log(
+        "[QuoteProvider] step resolve:",
+        state.currentStepId,
+        step.resolve,
+      );
       if (step.resolve) {
         dispatch({ type: "BEGIN_RESOLVE" });
         try {
@@ -162,8 +208,8 @@ export function QuoteProvider({
   // Actions object is referentially stable per state — fine, consumers of
   // actions don't care about identity churn the way state subscribers do.
   const actions = useMemo<FlowActions>(
-    () => ({ submitStep, goBack, jumpTo }),
-    [submitStep, goBack, jumpTo],
+    () => ({ submitStep, goBack, jumpTo, load }),
+    [submitStep, goBack, jumpTo, load],
   );
 
   return (

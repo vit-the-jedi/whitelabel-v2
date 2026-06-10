@@ -10,7 +10,7 @@
 
 import type { AnswerMap, Draft, FlowConfig } from "./types";
 
-export type Status = "idle" | "resolving" | "error";
+export type Status = "idle" | "resolving" | "loading" | "error";
 
 export type FlowState = {
   config: FlowConfig;
@@ -19,8 +19,11 @@ export type FlowState = {
   visited: string[];
   answers: AnswerMap;
   /** Option lists populated by resolvers — separate from user answers. */
-  fieldOptions: Record<string, string[]>;
+  fieldOptions: Record<string, any>[];
+  /** Data populated by loaders — separate from user answers. */
+  fieldData: Record<string, any>[];
   status: Status;
+  loading: boolean;
   error: string | null;
 };
 
@@ -31,14 +34,18 @@ export type Params = {
 export type ParamsAction = {
   type: "UPDATE_PARAM" | "DELETE_PARAM" | "WIPE_PARAMS";
   params?: Record<string, string>;
+  paramKeys?: string[];
 };
 
 export type Action =
   | { type: "HYDRATE"; payload: Partial<FlowState> }
   | { type: "MERGE_ANSWERS"; answers: AnswerMap }
   | { type: "SET_FIELD_OPTIONS"; options: Record<string, string[]> }
+  | { type: "SET_FIELD_DATA"; fieldData: Record<string, any>[] }
   | { type: "ADVANCE"; toStepId: string }
   | { type: "BEGIN_RESOLVE" }
+  | { type: "BEGIN_LOAD" }
+  | { type: "LOAD_ERROR"; error: string }
   | { type: "RESOLVE_ERROR"; error: string }
   | { type: "GO_BACK" }
   | { type: "JUMP_TO_STEP"; stepId: string };
@@ -56,8 +63,10 @@ export function buildInitialState(args: {
       currentStepId: draft.currentStepId || config.startStep,
       visited: draft.visited?.length ? draft.visited : [],
       answers: draft.answers ?? {},
-      fieldOptions: {},
+      fieldOptions: draft.fieldOptions ?? [],
+      fieldData: draft.fieldData ?? [],
       status: "idle",
+      loading: false,
       error: null,
     };
   }
@@ -67,9 +76,11 @@ export function buildInitialState(args: {
     currentStepId: config.startStep,
     visited: [],
     answers: {},
-    fieldOptions: {},
+    fieldOptions: [],
+    fieldData: [],
     status: "idle",
     error: null,
+    loading: false,
   };
 }
 
@@ -79,7 +90,7 @@ export function paramReducer(params: Params, action: ParamsAction): Params {
       return { ...params, ...action.params };
     case "DELETE_PARAM":
       const newParams = { ...params };
-      for (const key of Object.keys(action.params || {})) {
+      for (const key of action.paramKeys || []) {
         delete newParams[key];
       }
       return newParams;
@@ -110,7 +121,14 @@ export function flowReducer(state: FlowState, action: Action): FlowState {
         fieldOptions: { ...state.fieldOptions, ...action.options },
       };
 
+    case "SET_FIELD_DATA":
+      return {
+        ...state,
+        fieldData: [...state.fieldData, ...action.fieldData],
+      };
+
     case "ADVANCE": {
+      console.log("[Reducer] advancing to", action.toStepId); // DEBUG
       if (action.toStepId === state.currentStepId) return state;
       return {
         ...state,
@@ -125,6 +143,12 @@ export function flowReducer(state: FlowState, action: Action): FlowState {
       return { ...state, status: "resolving", error: null };
 
     case "RESOLVE_ERROR":
+      return { ...state, status: "error", error: action.error };
+
+    case "BEGIN_LOAD":
+      return { ...state, status: "loading", error: null };
+
+    case "LOAD_ERROR":
       return { ...state, status: "error", error: action.error };
 
     case "GO_BACK": {

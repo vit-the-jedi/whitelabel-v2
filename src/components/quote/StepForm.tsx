@@ -12,9 +12,10 @@
  * island so the rest of the step stays zero-JS.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useFlowActions, useFlowState } from "./QuoteProvider";
+import { useParamsActions, useParamsState } from "../utils/ParamsProvider";
 import type { AnswerValue, FieldDef } from "@/lib/flow/types";
 
 export function StepForm({
@@ -25,7 +26,22 @@ export function StepForm({
   fields: FieldDef[];
 }) {
   const state = useFlowState();
-  const { submitStep, goBack } = useFlowActions();
+  const { submitStep, goBack, load } = useFlowActions();
+
+  // Load field options on mount (for dynamic selects). In a real app you'd want to cache these per step so you don't reload on every keystroke.
+
+  useEffect(() => {
+    const loadData = async () => {
+      await load(state.answers);
+      updateParams({ lastStep: stepId });
+    };
+    loadData();
+  }, [state.answers]);
+
+  console.log("state", state); // Log the entire state object to inspect its structure and contents
+
+  const paramsState = useParamsState();
+  const { updateParams } = useParamsActions();
 
   // Seed local draft from already-committed answers (so back/edit pre-fills).
   const [draft, setDraft] = useState<Record<string, AnswerValue>>(() => {
@@ -41,7 +57,6 @@ export function StepForm({
   const onSubmit = async () => {
     setErrors({});
     const result = await submitStep(draft);
-    console.log("submitStep result:", result);
     if (!result.ok) setErrors(result.errors);
   };
 
@@ -65,12 +80,7 @@ export function StepForm({
               onChange={(e) => setField(field.name, e.target.value)}
             >
               <option value="">Select…</option>
-              {(
-                field.options ??
-                (field.optionsFrom
-                  ? state.fieldOptions[field.optionsFrom]
-                  : undefined)
-              )?.map((o) => {
+              {field.options?.map((o) => {
                 const opt = typeof o === "string" ? { value: o, label: o } : o;
                 return (
                   <option key={opt.value} value={opt.value}>
@@ -87,12 +97,7 @@ export function StepForm({
               onChange={(e) => setField(field.name, e.target.checked)}
             />
           ) : field.kind === "radio" ? (
-            (
-              field.options ??
-              (field.optionsFrom
-                ? state.fieldOptions[field.optionsFrom]
-                : undefined)
-            )?.map((o) => {
+            field.options?.map((o) => {
               const opt = typeof o === "string" ? { value: o, label: o } : o;
               return (
                 <label key={opt.value} style={{ display: "block" }}>

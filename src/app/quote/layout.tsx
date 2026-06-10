@@ -12,6 +12,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { QuoteProvider } from "@/components/quote/QuoteProvider";
+import { ParamsProvider } from "@/components/utils/ParamsProvider";
 import { getDraft, getSiteConfig } from "@/lib/flow/config";
 import { buildInitialState } from "@/lib/flow/machine";
 import { getFontForConfig } from "@/lib/fonts";
@@ -58,7 +59,9 @@ export default async function QuoteLayout({
       </header>
 
       <main style={{ maxWidth: 560, margin: "0 auto", padding: 16 }}>
-        <QuoteProvider initialState={initialState}>{children}</QuoteProvider>
+        <QuoteProvider initialState={initialState}>
+          <ParamsProvider initialParams={{}}>{children}</ParamsProvider>
+        </QuoteProvider>
       </main>
     </div>
   );

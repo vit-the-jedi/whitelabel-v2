@@ -53,6 +53,12 @@ export type ValidationResult = {
   errors: Record<string, string>;
 };
 
+export type LoaderResult = {
+  ok: boolean;
+  data?: Record<string, any>[];
+  errors: Record<string, string>;
+};
+
 function isEmpty(v: AnswerValue | undefined): boolean {
   return (
     v === undefined ||

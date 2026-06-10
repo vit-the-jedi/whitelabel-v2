@@ -57,12 +57,6 @@ export type FieldDef = {
   required?: boolean;
   /** Static options for `select` and `radio` fields. */
   options?: { value: string; label: string }[];
-  /**
-   * Key in `answers` whose value is a string[] of options populated by a
-   * resolver. Used when options are dynamic (e.g. API-driven vehicle makes).
-   * At render time the field reads answers[optionsFrom] as its option list.
-   */
-  optionsFrom?: string;
 };
 
 /**
@@ -71,14 +65,12 @@ export type FieldDef = {
  * on that result. This is how "call the rater, then continue vs. decline"
  * stays declarative. Extend the union as you add integrations.
  */
-export type ResolveKind =
-  | "rater"
-  | "companyInfo"
+export type ResolveKind = "rater" | "companyInfo";
+export type LoaderKind =
+  | "vehicleYears"
   | "vehicleMakes"
   | "vehicleModels"
-  | "vehicleYears"
   | "getFeedFromMastodon";
-
 export type StepDef = {
   id: string;
   /** Static heading/help shown above the form (server-rendered). */
@@ -88,6 +80,8 @@ export type StepDef = {
   fields: FieldDef[];
   /** Optional async side effect run on submit before branching. */
   resolve?: ResolveKind;
+  /** Optional async loader to populate dynamic field options. */
+  load?: LoaderKind;
   /** Outgoing edges. Evaluated in order; first matching guard set wins. */
   next: Transition[];
   /** Terminal steps (thank-you, decline) have no outgoing edges. */
@@ -116,5 +110,8 @@ export type Draft = {
   answers: AnswerMap;
   /** Steps the user has actually traversed, in order. */
   visited: string[];
+  /** Data populated by loaders — separate from user answers. */
+  fieldData: Record<string, any>[];
+  fieldOptions: Record<string, any>[];
   currentStepId: string;
 };

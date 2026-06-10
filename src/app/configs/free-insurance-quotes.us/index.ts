@@ -52,17 +52,8 @@ const freeInsuranceQuotesOverrides = {
   },
   flow: {
     brand: "free-insurance-quotes",
-    startStep: "zip",
+    startStep: "vehicle-year",
     steps: {
-      zip: {
-        id: "zip",
-        title: "Where do you live?",
-        fields: [
-          { name: "zip", label: "ZIP code", kind: "zip", required: true },
-        ],
-        resolve: "vehicleYears",
-        next: [{ to: "vehicle-year" }],
-      },
       "vehicle-year": {
         id: "vehicle-year",
         title: "Tell us your vehicle's model year",
@@ -72,10 +63,12 @@ const freeInsuranceQuotesOverrides = {
             label: "Year",
             kind: "radio",
             required: true,
-            optionsFrom: "vehicleYears",
+            options: Array.from({ length: 30 }, (_, i) => {
+              const year = new Date().getFullYear() - i;
+              return { value: String(year), label: String(year) };
+            }),
           },
         ],
-        resolve: "vehicleMakes",
         next: [{ to: "vehicle-make" }],
       },
       "vehicle-make": {
@@ -87,10 +80,10 @@ const freeInsuranceQuotesOverrides = {
             label: "Make",
             kind: "radio",
             required: true,
-            optionsFrom: "vehicleMakes",
+            options: [],
           },
         ],
-        resolve: "vehicleModels",
+        load: "vehicleMakes",
         next: [{ to: "vehicle-model" }],
       },
       "vehicle-model": {
@@ -102,10 +95,19 @@ const freeInsuranceQuotesOverrides = {
             label: "Model",
             kind: "radio",
             required: true,
-            optionsFrom: "vehicleModels",
+            options: [],
           },
         ],
+        load: "vehicleModels",
         next: [{ to: "contact" }],
+      },
+      zip: {
+        id: "zip",
+        title: "Where do you live?",
+        fields: [
+          { name: "zip", label: "ZIP code", kind: "zip", required: true },
+        ],
+        next: [{ to: "vehicle-year" }],
       },
       contact: {
         id: "contact",
@@ -115,7 +117,7 @@ const freeInsuranceQuotesOverrides = {
           { name: "phone", label: "Phone", kind: "text", required: true },
         ],
         next: [{ to: "thankyou" }],
-        resolve: "getFeedFromMastodon",
+        load: "getFeedFromMastodon",
       },
       thankyou: {
         id: "thankyou",
@@ -126,7 +128,6 @@ const freeInsuranceQuotesOverrides = {
             label: "Mastodon feed data",
             kind: "text",
             required: false,
-            optionsFrom: "getFeedFromMastodon",
           },
         ],
         next: [],
