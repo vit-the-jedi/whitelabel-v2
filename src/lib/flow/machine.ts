@@ -18,8 +18,6 @@ export type FlowState = {
   currentStepId: string;
   visited: string[];
   answers: AnswerMap;
-  /** Option lists populated by resolvers — separate from user answers. */
-  fieldOptions: Record<string, any>[];
   /** Data populated by loaders — separate from user answers. */
   fieldData: Record<string, any>[];
   status: Status;
@@ -40,7 +38,10 @@ export type ParamsAction = {
 export type Action =
   | { type: "HYDRATE"; payload: Partial<FlowState> }
   | { type: "MERGE_ANSWERS"; answers: AnswerMap }
-  | { type: "SET_FIELD_OPTIONS"; options: Record<string, string[]> }
+  | {
+      type: "SET_FIELD_OPTIONS";
+      options: Record<string, { value: string; label: string }[]>;
+    }
   | { type: "SET_FIELD_DATA"; fieldData: Record<string, any>[] }
   | { type: "ADVANCE"; toStepId: string }
   | { type: "BEGIN_RESOLVE" }
@@ -48,7 +49,9 @@ export type Action =
   | { type: "LOAD_ERROR"; error: string }
   | { type: "RESOLVE_ERROR"; error: string }
   | { type: "GO_BACK" }
-  | { type: "JUMP_TO_STEP"; stepId: string };
+  | { type: "JUMP_TO_STEP"; stepId: string }
+  | { type: "BEGIN_LOADING" }
+  | { type: "END_LOADING" };
 
 export function buildInitialState(args: {
   config: FlowConfig;
@@ -63,7 +66,6 @@ export function buildInitialState(args: {
       currentStepId: draft.currentStepId || config.startStep,
       visited: draft.visited?.length ? draft.visited : [],
       answers: draft.answers ?? {},
-      fieldOptions: draft.fieldOptions ?? [],
       fieldData: draft.fieldData ?? [],
       status: "idle",
       loading: false,
@@ -76,7 +78,7 @@ export function buildInitialState(args: {
     currentStepId: config.startStep,
     visited: [],
     answers: {},
-    fieldOptions: [],
+
     fieldData: [],
     status: "idle",
     error: null,
@@ -112,13 +114,21 @@ export function flowReducer(state: FlowState, action: Action): FlowState {
     case "SET_FIELD_OPTIONS":
       return {
         ...state,
-        fieldOptions: { ...state.fieldOptions, ...action.options },
-      };
-
-    case "SET_FIELD_OPTIONS":
-      return {
-        ...state,
-        fieldOptions: { ...state.fieldOptions, ...action.options },
+        config: {
+          ...state.config,
+          steps: {
+            ...state.config.steps,
+            [state.currentStepId]: {
+              ...state.config.steps[state.currentStepId],
+              fields: state.config.steps[state.currentStepId].fields.map(
+                (field) =>
+                  action.options[field.name]
+                    ? { ...field, options: action.options[field.name] }
+                    : field,
+              ),
+            },
+          },
+        },
       };
 
     case "SET_FIELD_DATA":
@@ -128,7 +138,6 @@ export function flowReducer(state: FlowState, action: Action): FlowState {
       };
 
     case "ADVANCE": {
-      console.log("[Reducer] advancing to", action.toStepId); // DEBUG
       if (action.toStepId === state.currentStepId) return state;
       return {
         ...state,
@@ -163,7 +172,12 @@ export function flowReducer(state: FlowState, action: Action): FlowState {
         error: null,
       };
     }
-
+    case "BEGIN_LOADING": {
+      return { ...state, loading: true };
+    }
+    case "END_LOADING": {
+      return { ...state, loading: false };
+    }
     case "JUMP_TO_STEP": {
       const reachable =
         action.stepId === state.currentStepId ||

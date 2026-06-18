@@ -3,7 +3,7 @@
 import type { AnswerMap, LoaderKind } from "./types";
 
 export type LoaderResult = {
-  options?: Record<string, string[]>;
+  options?: Record<string, { value: string; label: string }[]>;
   data?: Record<string, unknown>;
   errors?: Record<string, string>;
 };
@@ -15,15 +15,15 @@ export type Loader = (
 
 export const loaders: Record<LoaderKind, Loader> = {
   vehicleYears: async (answers, signal) => {
-    console.log("Loading vehicle years with answers:", answers);
     const currentYear = new Date().getFullYear();
     const minimumYear = 1987;
+    const years = Array.from(
+      { length: currentYear - minimumYear + 1 },
+      (_, i) => String(minimumYear + i),
+    ).reverse();
     return {
       options: {
-        vehicleYears: Array.from(
-          { length: currentYear - minimumYear + 1 },
-          (_, i) => String(minimumYear + i),
-        ).reverse(),
+        vehicleYear: years.map((y) => ({ value: y, label: y })),
       },
     };
   },
@@ -38,7 +38,11 @@ export const loaders: Record<LoaderKind, Loader> = {
         throw new Error(`Vehicle makes lookup failed (${res.status})`);
       return res.json() as Promise<string[]>;
     });
-    return { options: { vehicleMakes: makes } };
+    return {
+      options: {
+        vehicleMakes: makes.map((make) => ({ value: make, label: make })),
+      },
+    };
   },
   vehicleModels: async (answers, signal) => {
     if (!answers.year) {
@@ -55,7 +59,11 @@ export const loaders: Record<LoaderKind, Loader> = {
         throw new Error(`Vehicle models lookup failed (${res.status})`);
       return res.json() as Promise<string[]>;
     });
-    return { options: { vehicleModels: models } };
+    return {
+      options: {
+        vehicleModels: models.map((model) => ({ value: model, label: model })),
+      },
+    };
   },
   getFeedFromMastodon: async (answers, signal) => {
     const res = await fetch("/api/mastodon/feed", {

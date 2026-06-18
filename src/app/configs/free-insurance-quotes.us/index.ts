@@ -59,16 +59,14 @@ const freeInsuranceQuotesOverrides = {
         title: "Tell us your vehicle's model year",
         fields: [
           {
-            name: "year",
-            label: "Year",
+            name: "vehicleYear",
+            label: "Vehicle Year",
             kind: "radio",
             required: true,
-            options: Array.from({ length: 30 }, (_, i) => {
-              const year = new Date().getFullYear() - i;
-              return { value: String(year), label: String(year) };
-            }),
+            options: [],
           },
         ],
+        load: "vehicleYears",
         next: [{ to: "vehicle-make" }],
       },
       "vehicle-make": {

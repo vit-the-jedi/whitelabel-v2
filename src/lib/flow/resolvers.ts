@@ -11,7 +11,7 @@ import type { AnswerMap, ResolveKind } from "./types";
 export type ResolverResult = {
   merge?: AnswerMap;
   /** Field option lists to store separately from user answers. */
-  options?: Record<string, string[]>;
+  options?: Record<string, { value: string; label: string }[]>;
 };
 
 export type Resolver = (

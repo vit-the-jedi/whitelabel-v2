@@ -112,6 +112,5 @@ export type Draft = {
   visited: string[];
   /** Data populated by loaders — separate from user answers. */
   fieldData: Record<string, any>[];
-  fieldOptions: Record<string, any>[];
   currentStepId: string;
 };

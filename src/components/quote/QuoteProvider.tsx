@@ -85,18 +85,16 @@ export function QuoteProvider({
       const step = state.config.steps[state.currentStepId];
       const merged = { ...state.answers, ...stepAnswers };
       if (step.load) {
-        console.log(
-          "[QuoteProvider] step load:",
-          state.currentStepId,
-          step.load,
-        );
-        dispatch({ type: "BEGIN_LOAD" });
+        dispatch({ type: "BEGIN_LOADING" });
         try {
           const { options, data } = await loaders[step.load](merged);
+          console.log("[load] options:", options, "data:", data);
           if (options) {
             dispatch({ type: "SET_FIELD_OPTIONS", options });
           }
+
           if (data) {
+            console.log("[load] data:", data);
             dispatch({
               type: "SET_FIELD_DATA",
               fieldData: Object.entries(data).map(([key, value]) => ({
@@ -104,6 +102,7 @@ export function QuoteProvider({
               })),
             });
           }
+          dispatch({ type: "END_LOADING" });
           return {};
         } catch (err) {
           console.log("Loader error", err);
