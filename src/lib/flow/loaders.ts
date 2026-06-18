@@ -28,31 +28,33 @@ export const loaders: Record<LoaderKind, Loader> = {
     };
   },
   vehicleMakes: async (answers, signal) => {
-    if (!answers.year) {
+    console.log(answers);
+    if (!answers.vehicleYear) {
       throw new Error("Year is required.");
     }
-    const makes = await fetch(`/api/vehicle/makes/${answers.year}`, {
+    const makes = await fetch(`/api/vehicle/makes/${answers.vehicleYear}`, {
       signal,
     }).then((res) => {
       if (!res.ok)
         throw new Error(`Vehicle makes lookup failed (${res.status})`);
       return res.json() as Promise<string[]>;
     });
+    console.log(makes);
     return {
       options: {
-        vehicleMakes: makes.map((make) => ({ value: make, label: make })),
+        vehicleMake: makes.map((make) => ({ value: make, label: make })),
       },
     };
   },
   vehicleModels: async (answers, signal) => {
-    if (!answers.year) {
+    if (!answers.vehicleYear) {
       throw new Error("Year is required.");
     }
-    if (!answers.make) {
+    if (!answers.vehicleMake) {
       throw new Error("Make is required.");
     }
     const models = await fetch(
-      `/api/vehicle/models/${encodeURIComponent(String(answers.year))}/${encodeURIComponent(String(answers.make))}`,
+      `/api/vehicle/models/${encodeURIComponent(String(answers.vehicleYear))}/${encodeURIComponent(String(answers.vehicleMake))}`,
       { signal },
     ).then((res) => {
       if (!res.ok)
@@ -61,7 +63,7 @@ export const loaders: Record<LoaderKind, Loader> = {
     });
     return {
       options: {
-        vehicleModels: models.map((model) => ({ value: model, label: model })),
+        vehicleModel: models.map((model) => ({ value: model, label: model })),
       },
     };
   },

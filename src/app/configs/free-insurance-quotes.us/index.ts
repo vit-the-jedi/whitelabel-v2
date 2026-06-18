@@ -74,8 +74,8 @@ const freeInsuranceQuotesOverrides = {
         title: "Tell us your vehicle's make",
         fields: [
           {
-            name: "make",
-            label: "Make",
+            name: "vehicleMake",
+            label: "Vehicle Make",
             kind: "radio",
             required: true,
             options: [],
@@ -89,8 +89,8 @@ const freeInsuranceQuotesOverrides = {
         title: "Tell us your vehicle's model",
         fields: [
           {
-            name: "model",
-            label: "Model",
+            name: "vehicleModel",
+            label: "Vehicle Model",
             kind: "radio",
             required: true,
             options: [],
