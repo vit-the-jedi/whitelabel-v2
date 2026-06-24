@@ -21,22 +21,20 @@ export type Resolver = (
 
 export const resolvers: Record<ResolveKind, Resolver> = {
   /** Calls the rater for carrier availability/pricing. STUB. */
-  rater: async (answers, signal) => {
-    const res = await fetch("/api/rate", {
+  feed: async (answers, signal) => {
+    const res = await fetch(`/api/mastodon/feed`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(answers),
       signal,
     });
-    if (!res.ok) throw new Error(`Rater failed (${res.status})`);
-    const data = (await res.json()) as {
-      available: boolean;
-      premium?: number;
-    };
+    if (!res.ok) throw new Error(`Feed failed (${res.status})`);
+    const data = (await res.json()) as Record<string, any>;
+    const { bids = [], ...extra } = data;
     return {
       merge: {
-        carrierAvailable: data.available,
-        premium: data.premium ?? null,
+        bids: data.bids ?? [],
+        ...extra,
       },
     };
   },

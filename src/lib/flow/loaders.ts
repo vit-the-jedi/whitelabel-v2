@@ -23,16 +23,16 @@ export const loaders: Record<LoaderKind, Loader> = {
     ).reverse();
     return {
       options: {
-        vehicleYear: years.map((y) => ({ value: y, label: y })),
+        "vehicle-year": years.map((y) => ({ value: y, label: y })),
       },
     };
   },
   vehicleMakes: async (answers, signal) => {
     console.log(answers);
-    if (!answers.vehicleYear) {
+    if (!answers["vehicle-year"]) {
       throw new Error("Year is required.");
     }
-    const makes = await fetch(`/api/vehicle/makes/${answers.vehicleYear}`, {
+    const makes = await fetch(`/api/vehicle/makes/${answers["vehicle-year"]}`, {
       signal,
     }).then((res) => {
       if (!res.ok)
@@ -42,19 +42,19 @@ export const loaders: Record<LoaderKind, Loader> = {
     console.log(makes);
     return {
       options: {
-        vehicleMake: makes.map((make) => ({ value: make, label: make })),
+        "vehicle-make": makes.map((make) => ({ value: make, label: make })),
       },
     };
   },
   vehicleModels: async (answers, signal) => {
-    if (!answers.vehicleYear) {
+    if (!answers["vehicle-year"]) {
       throw new Error("Year is required.");
     }
-    if (!answers.vehicleMake) {
+    if (!answers["vehicle-make"]) {
       throw new Error("Make is required.");
     }
     const models = await fetch(
-      `/api/vehicle/models/${encodeURIComponent(String(answers.vehicleYear))}/${encodeURIComponent(String(answers.vehicleMake))}`,
+      `/api/vehicle/models/${encodeURIComponent(String(answers["vehicle-year"]))}/${encodeURIComponent(String(answers["vehicle-make"]))}`,
       { signal },
     ).then((res) => {
       if (!res.ok)
@@ -63,19 +63,35 @@ export const loaders: Record<LoaderKind, Loader> = {
     });
     return {
       options: {
-        vehicleModel: models.map((model) => ({ value: model, label: model })),
+        "vehicle-model": models.map((model) => ({
+          value: model,
+          label: model,
+        })),
       },
     };
   },
   getFeedFromMastodon: async (answers, signal) => {
-    const res = await fetch("/api/mastodon/feed", {
+    const t = {
+      "vehicle-year": 2015,
+      "vehicle-make": "Toyota",
+      "vehicle-model": "Camry",
+      zip: "90210",
+      email: "test@example.com",
+      phone: "555-555-5555",
+    };
+    const res = await fetch(`/api/mastodon/feed`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(answers),
+      body: JSON.stringify(t),
       signal,
     });
-    if (!res.ok) throw new Error(`Data post failed (${res.status})`);
-    const data = (await res.json()) as { feedItems: string[] };
-    return { data: { feedItems: data.feedItems } };
+    if (!res.ok) throw new Error(`Feed failed (${res.status})`);
+    const data = (await res.json()) as Record<string, any>;
+    const { bids = [], ...extra } = data;
+    return {
+      merge: {
+        data,
+      },
+    };
   },
 };

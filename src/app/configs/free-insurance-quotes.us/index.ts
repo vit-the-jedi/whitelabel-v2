@@ -52,14 +52,28 @@ const freeInsuranceQuotesOverrides = {
   },
   flow: {
     brand: "free-insurance-quotes",
-    startStep: "vehicle-year",
+    startStep: "date-of-birth",
     steps: {
+      feed: {
+        id: "feed",
+        title: "Mastodon Feed",
+        fields: [
+          {
+            name: "feed",
+            label: "Mastodon feed data",
+            kind: "text",
+            required: false,
+          },
+        ],
+        load: "getFeedFromMastodon",
+        next: [{ to: "vehicle-year" }],
+      },
       "vehicle-year": {
         id: "vehicle-year",
         title: "Tell us your vehicle's model year",
         fields: [
           {
-            name: "vehicleYear",
+            name: "vehicle-year",
             label: "Vehicle Year",
             kind: "radio",
             required: true,
@@ -74,7 +88,7 @@ const freeInsuranceQuotesOverrides = {
         title: "Tell us your vehicle's make",
         fields: [
           {
-            name: "vehicleMake",
+            name: "vehicle-make",
             label: "Vehicle Make",
             kind: "radio",
             required: true,
@@ -89,7 +103,7 @@ const freeInsuranceQuotesOverrides = {
         title: "Tell us your vehicle's model",
         fields: [
           {
-            name: "vehicleModel",
+            name: "vehicle-model",
             label: "Vehicle Model",
             kind: "radio",
             required: true,
@@ -99,6 +113,115 @@ const freeInsuranceQuotesOverrides = {
         load: "vehicleModels",
         next: [{ to: "contact" }],
       },
+      "date-of-birth": {
+        id: "date-of-birth",
+        title: "What's your birthday?",
+        fields: [
+          {
+            name: "dob_month",
+            label: "Month",
+            kind: "text",
+            required: true,
+          },
+          {
+            name: "dob_day",
+            label: "Day",
+            kind: "text",
+            required: true,
+          },
+          {
+            name: "dob_year",
+            label: "Year",
+            kind: "text",
+            required: true,
+          },
+        ],
+        next: [
+          {
+            to: "2nd_driver_gender",
+            when: [
+              {
+                field: "2nd_driver",
+                op: "eq",
+                value: true,
+              },
+            ],
+          },
+          { to: "zip" },
+        ],
+        extraButtons: [
+          {
+            label: "Add Second Driver",
+            action: "addSecondDriver",
+          },
+        ],
+      },
+
+      /* ---- 2nd driver branch -------------------------------------------- */
+      /* Entered only when `2nd_driver` is true (set by the Add Second Driver
+         button on date-of-birth). Each step rejoins the main flow at `zip`. */
+      "2nd_driver_gender": {
+        id: "2nd_driver_gender",
+        title: "Second driver — gender",
+        fields: [
+          {
+            name: "2nd_driver_gender",
+            label: "Gender",
+            kind: "radio",
+            required: true,
+            options: [
+              { value: "male", label: "Male" },
+              { value: "female", label: "Female" },
+            ],
+          },
+        ],
+        next: [{ to: "2nd_driver_name" }],
+      },
+      "2nd_driver_name": {
+        id: "2nd_driver_name",
+        title: "Second driver — name",
+        fields: [
+          {
+            name: "2nd_driver_first_name",
+            label: "First name",
+            kind: "text",
+            required: true,
+          },
+          {
+            name: "2nd_driver_last_name",
+            label: "Last name",
+            kind: "text",
+            required: true,
+          },
+        ],
+        next: [{ to: "2nd_driver_dob" }],
+      },
+      "2nd_driver_dob": {
+        id: "2nd_driver_dob",
+        title: "Second driver — date of birth",
+        fields: [
+          {
+            name: "2nd_driver_dob_month",
+            label: "Month",
+            kind: "text",
+            required: true,
+          },
+          {
+            name: "2nd_driver_dob_day",
+            label: "Day",
+            kind: "text",
+            required: true,
+          },
+          {
+            name: "2nd_driver_dob_year",
+            label: "Year",
+            kind: "text",
+            required: true,
+          },
+        ],
+        next: [{ to: "zip" }],
+      },
+
       zip: {
         id: "zip",
         title: "Where do you live?",

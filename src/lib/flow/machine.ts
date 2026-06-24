@@ -23,6 +23,7 @@ export type FlowState = {
   status: Status;
   loading: boolean;
   error: string | null;
+  extraButtons?: Record<string, any>[];
 };
 
 export type Params = {

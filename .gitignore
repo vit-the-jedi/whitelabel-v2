@@ -10,6 +10,9 @@
 /.next/
 /out/
 
+# typescript
+*.tsbuildinfo
+
 # production
 /build
 
@@ -27,6 +30,8 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+
+.env
 
 # vercel
 .vercel

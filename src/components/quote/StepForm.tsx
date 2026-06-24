@@ -16,7 +16,12 @@ import { useEffect, useState } from "react";
 
 import { useFlowActions, useFlowState } from "./QuoteProvider";
 import { useParamsActions, useParamsState } from "../utils/ParamsProvider";
-import type { AnswerValue, FieldDef } from "@/lib/flow/types";
+import type {
+  AnswerValue,
+  ExtraButton,
+  ExtraButtonAction,
+  FieldDef,
+} from "@/lib/flow/types";
 
 export function StepForm({ stepId }: { stepId: string }) {
   const isLoading = useFlowState()?.status === "loading";
@@ -65,6 +70,31 @@ export function StepForm({ stepId }: { stepId: string }) {
   };
 
   const resolving = state.status === "resolving";
+
+  /**
+   * Extra-button handlers live here on the client — config only names an
+   * `action` (a serializable string), never a function, so FlowConfig can still
+   * cross the server→client boundary. Each handler can reach flow actions and
+   * the live draft because it's defined inside the component.
+   *
+   * NOTE: we merge the flag straight into the submitStep payload rather than
+   * calling setField() first. setField is async React state; the flag wouldn't
+   * be in `draft` yet when submitStep ran, so the guard would miss it.
+   */
+  const runExtraButton = async (btn: ExtraButton) => {
+    setErrors({});
+    let result: Awaited<ReturnType<typeof submitStep>>;
+    switch (btn.action) {
+      case "addSecondDriver":
+        // Commit this step's answers + the branch flag in one shot; the
+        // `2nd_driver eq true` guard in config then routes into the sub-flow.
+        result = await submitStep({ ...draft, "2nd_driver": true });
+        break;
+      default:
+        return;
+    }
+    if (!result.ok) setErrors(result.errors);
+  };
 
   return (
     <div>
@@ -150,6 +180,17 @@ export function StepForm({ stepId }: { stepId: string }) {
         <button type="button" onClick={onSubmit} disabled={resolving}>
           {resolving ? "Checking…" : "Continue"}
         </button>
+
+        {state.config.steps[state.currentStepId].extraButtons?.map((btn) => (
+          <button
+            type="button"
+            onClick={() => runExtraButton(btn)}
+            disabled={resolving}
+            key={btn.label}
+          >
+            {btn.label}
+          </button>
+        ))}
       </div>
     </div>
   );

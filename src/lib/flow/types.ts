@@ -60,12 +60,27 @@ export type FieldDef = {
 };
 
 /**
+ * Buttons are *data*, like the rest of the flow config, so they must stay
+ * serializable to cross the server→client boundary. Instead of a function,
+ * a button names an `action` — a key into the client-side handler registry
+ * (see EXTRA_BUTTON_ACTIONS in StepForm). Optionally pass a serializable
+ * `payload` the handler can read.
+ */
+export type ExtraButtonAction = "addSecondDriver";
+
+export type ExtraButton = {
+  label: string;
+  action: ExtraButtonAction;
+  payload?: Record<string, AnswerValue>;
+};
+
+/**
  * An async side effect to run on submit *before* resolving `next`.
  * The resolver writes its result back into answers; `next` guards then branch
  * on that result. This is how "call the rater, then continue vs. decline"
  * stays declarative. Extend the union as you add integrations.
  */
-export type ResolveKind = "rater" | "companyInfo";
+export type ResolveKind = "feed" | "companyInfo";
 export type LoaderKind =
   | "vehicleYears"
   | "vehicleMakes"
@@ -86,6 +101,8 @@ export type StepDef = {
   next: Transition[];
   /** Terminal steps (thank-you, decline) have no outgoing edges. */
   terminal?: boolean;
+  /** extra buttons */
+  extraButtons?: ExtraButton[];
 };
 
 export type FlowConfig = {
@@ -114,3 +131,17 @@ export type Draft = {
   fieldData: Record<string, any>[];
   currentStepId: string;
 };
+
+export type MastodonFormFields = Required<{
+  first_name: string;
+  last_name: string;
+  zipcode: string;
+  birth_month: string;
+  birth_day: string;
+  birth_year: string;
+  vehicle_year: string;
+  vehicle_make: string;
+  vehicle_model: string;
+  address: string;
+  phone: string;
+}>;
