@@ -21,7 +21,6 @@ export const loaders: Record<LoaderKind, Loader> = {
       { length: currentYear - minimumYear + 1 },
       (_, i) => String(minimumYear + i),
     ).reverse();
-    console.log("[loaders] vehicleYears", years);
     return {
       options: {
         year: years.map((y) => ({ value: y, label: y })),

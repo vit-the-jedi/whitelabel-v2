@@ -42,10 +42,11 @@ export function StepForm({ stepId }: { stepId: string }) {
   // resolved + notFound()-guarded it). Falling back to currentStepId only if
   // the prop is somehow missing. Using currentStepId directly is unsafe — it
   // can be stale (HMR while editing config, or refresh before draft-resume).
-  const step = state.config.steps[state.currentStepId];
+  const step =
+    state.config.steps[stepId] ?? state.config.steps[state.currentStepId];
   const fields: FieldDef[] = step?.fields ?? [];
 
-  const paramsState = useParamsState();
+  //const paramsState = useParamsState();
   const { updateParams } = useParamsActions();
 
   // Seed local draft from already-committed answers, scoped to this step's
@@ -67,7 +68,6 @@ export function StepForm({ stepId }: { stepId: string }) {
 
   const resolving = state.status === "resolving";
 
-  console.log("[StepForm] render", state);
   /**
    * Extra-button handlers live here on the client — config only names an
    * `action` (a serializable string), never a function, so FlowConfig can still

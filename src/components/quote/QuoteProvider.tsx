@@ -103,6 +103,52 @@ export function QuoteProvider({
   const [state, dispatch] = useReducer(flowReducer, initialState);
   const router = useRouter();
 
+  // In-session resume (survives reload, clears on tab close). Lead aggregation
+  // doesn't need a server draft store; sessionStorage is enough to not lose
+  // progress on refresh. Keyed by brand so different brands don't collide.
+  const storageKey = `flow:${initialState.config.brand}`;
+
+  // Hydrate once on mount (client-only). Runs AFTER hydration, so no SSR
+  // mismatch — server + first client render both use the server initialState.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as Partial<FlowState>;
+      dispatch({ type: "HYDRATE", payload: saved });
+      // The rendered step follows the URL, so move the URL to the resumed step
+      // (visited is restored, so StepGuard won't bounce it back).
+      if (saved.currentStepId) {
+        dispatch({ type: "JUMP_TO_STEP", stepId: saved.currentStepId });
+      }
+    } catch {
+      /* corrupt/blocked storage — ignore and start fresh */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist the resumable slice on change (never the server-provided config).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const { answers, currentStepId, visited, cursors, flags } = state;
+    try {
+      sessionStorage.setItem(
+        storageKey,
+        JSON.stringify({ answers, currentStepId, visited, cursors, flags }),
+      );
+    } catch {
+      /* storage full/blocked — non-fatal */
+    }
+  }, [
+    storageKey,
+    state.answers,
+    state.currentStepId,
+    state.visited,
+    state.cursors,
+    state.flags,
+  ]);
+
   const load = useCallback<FlowActions["load"]>(
     async (stepAnswers) => {
       const step = state.config.steps[state.currentStepId];
@@ -111,13 +157,11 @@ export function QuoteProvider({
         dispatch({ type: "BEGIN_LOADING" });
         try {
           const { options, data } = await loaders[step.load](merged);
-          console.log("[load] options:", options, "data:", data);
           if (options) {
             dispatch({ type: "SET_FIELD_OPTIONS", options });
           }
 
           if (data) {
-            console.log("[load] data:", data);
             dispatch({
               type: "SET_FIELD_DATA",
               fieldData: Object.entries(data).map(([key, value]) => ({
@@ -249,6 +293,7 @@ export function QuoteProvider({
     [submitStep, goBack, jumpTo, load],
   );
 
+  console.log("[QuoteProvider] render", state);
   return (
     <FlowStateContext.Provider value={state}>
       <FlowActionsContext.Provider value={actions}>
