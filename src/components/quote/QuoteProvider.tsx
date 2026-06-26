@@ -116,11 +116,14 @@ export function QuoteProvider({
       const raw = sessionStorage.getItem(storageKey);
       if (!raw) return;
       const saved = JSON.parse(raw) as Partial<FlowState>;
+      // HYDRATE restores currentStepId/visited/answers into the reducer.
       dispatch({ type: "HYDRATE", payload: saved });
-      // The rendered step follows the URL, so move the URL to the resumed step
-      // (visited is restored, so StepGuard won't bounce it back).
+      // Align the URL to the resumed step. Use router.replace directly — NOT
+      // jumpTo: jumpTo is captured from the first render and closes over the
+      // initial (empty) state, so its isReachable() guard would reject the
+      // saved step. router.replace doesn't depend on reducer state.
       if (saved.currentStepId) {
-        dispatch({ type: "JUMP_TO_STEP", stepId: saved.currentStepId });
+        router.replace(stepPath(saved.currentStepId));
       }
     } catch {
       /* corrupt/blocked storage — ignore and start fresh */

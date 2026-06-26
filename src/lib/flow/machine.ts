@@ -229,5 +229,13 @@ export function flowReducer(state: FlowState, action: Action): FlowState {
 
 /** True if a step id is somewhere the user is allowed to be right now. */
 export function isReachable(state: FlowState, stepId: string): boolean {
+  console.log(
+    "[isReachable]",
+    stepId,
+    "currentStepId:",
+    state.currentStepId,
+    "visited:",
+    state.visited,
+  );
   return stepId === state.currentStepId || state.visited.includes(stepId);
 }

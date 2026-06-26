@@ -58,9 +58,9 @@ export function ParamsProvider({
       const next = new URLSearchParams(window.location.search);
       Object.entries(newParams).forEach(([k, v]) => next.set(k, v));
       console.log("Updating params:", newParams, "Next URLSearchParams:", next); // DEBUG
-      router.replace(`${window.location.pathname}?${next.toString()}`, {
-        scroll: false,
-      });
+      // router.replace(`${window.location.pathname}?${next.toString()}`, {
+      //   scroll: false,
+      // });
     },
     [paramsState, router],
   );
