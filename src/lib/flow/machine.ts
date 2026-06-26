@@ -8,9 +8,18 @@
  * branching logic testable in isolation.
  */
 
-import type { AnswerMap, Draft, FlowConfig } from "./types";
+import type {
+  AnswerMap,
+  AnswerValue,
+  Cursors,
+  Draft,
+  FlowConfig,
+  MastodonData,
+} from "./types";
 
 export type Status = "idle" | "resolving" | "loading" | "error";
+
+const ZERO_CURSORS: Cursors = { driver: 0, vehicle: 0, incident: 0 };
 
 export type FlowState = {
   config: FlowConfig;
@@ -18,6 +27,10 @@ export type FlowState = {
   currentStepId: string;
   visited: string[];
   answers: AnswerMap;
+  /** Active element index per repeatable entity (drivers/vehicles/incidents). */
+  cursors: Cursors;
+  /** Control flags that drive branching but are NOT part of the posted payload. */
+  flags: Record<string, AnswerValue>;
   /** Data populated by loaders — separate from user answers. */
   fieldData: Record<string, any>[];
   status: Status;
@@ -38,7 +51,13 @@ export type ParamsAction = {
 
 export type Action =
   | { type: "HYDRATE"; payload: Partial<FlowState> }
-  | { type: "MERGE_ANSWERS"; answers: AnswerMap }
+  | {
+      /** Atomic commit of a step: new payload + cursors + flags. */
+      type: "COMMIT_STEP";
+      data: MastodonData;
+      cursors?: Cursors;
+      flags?: Record<string, AnswerValue>;
+    }
   | {
       type: "SET_FIELD_OPTIONS";
       options: Record<string, { value: string; label: string }[]>;
@@ -66,7 +85,9 @@ export function buildInitialState(args: {
       quoteId,
       currentStepId: draft.currentStepId || config.startStep,
       visited: draft.visited?.length ? draft.visited : [],
-      answers: draft.answers ?? {},
+      answers: draft.answers ?? { data: {} },
+      cursors: { ...ZERO_CURSORS },
+      flags: {},
       fieldData: draft.fieldData ?? [],
       status: "idle",
       loading: false,
@@ -78,8 +99,9 @@ export function buildInitialState(args: {
     quoteId,
     currentStepId: config.startStep,
     visited: [],
-    answers: {},
-
+    answers: { data: {} },
+    cursors: { ...ZERO_CURSORS },
+    flags: {},
     fieldData: [],
     status: "idle",
     error: null,
@@ -109,8 +131,13 @@ export function flowReducer(state: FlowState, action: Action): FlowState {
     case "HYDRATE":
       return { ...state, ...action.payload };
 
-    case "MERGE_ANSWERS":
-      return { ...state, answers: { ...state.answers, ...action.answers } };
+    case "COMMIT_STEP":
+      return {
+        ...state,
+        answers: { data: action.data },
+        cursors: action.cursors ?? state.cursors,
+        flags: action.flags ?? state.flags,
+      };
 
     case "SET_FIELD_OPTIONS":
       return {

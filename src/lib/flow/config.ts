@@ -3,10 +3,11 @@
  * never ships to the client.
  */
 
-import type { Draft, FlowConfig } from "./types";
+import type { Draft, FlowConfig, StepDef } from "./types";
 import type { DefaultConfig } from "@/app/configs/defaultConfig";
 import { configs } from "@/app/configs";
 
+export function generateDefaultFlowSteps(): StepDef {}
 /* ------------------------------------------------------------------ */
 /* Fetchers (server-only). Swap bodies for real I/O.                   */
 /* ------------------------------------------------------------------ */

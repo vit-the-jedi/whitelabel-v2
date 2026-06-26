@@ -1,3 +1,4 @@
+import { generateDefaultFlowSteps } from "@/lib/flow/config";
 import type { FlowConfig } from "@/lib/flow/types";
 
 export type DefaultConfig = {
@@ -101,6 +102,11 @@ const defaultConfig: DefaultConfig = {
       enabled: false,
       scriptUrl: "",
     },
+  },
+  flow: {
+    brand: "default",
+    startStep: "zip",
+    steps: generateDefaultFlowSteps(),
   },
 };
 

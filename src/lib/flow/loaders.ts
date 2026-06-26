@@ -21,40 +21,44 @@ export const loaders: Record<LoaderKind, Loader> = {
       { length: currentYear - minimumYear + 1 },
       (_, i) => String(minimumYear + i),
     ).reverse();
+    console.log("[loaders] vehicleYears", years);
     return {
       options: {
-        "vehicle-year": years.map((y) => ({ value: y, label: y })),
+        year: years.map((y) => ({ value: y, label: y })),
       },
     };
   },
   vehicleMakes: async (answers, signal) => {
-    console.log(answers);
-    if (!answers["vehicle-year"]) {
+    // The active vehicle is the last one being filled (cursor advances per add).
+    const vehicle = answers.data.vehicles?.at(-1);
+    if (!vehicle?.year) {
       throw new Error("Year is required.");
     }
-    const makes = await fetch(`/api/vehicle/makes/${answers["vehicle-year"]}`, {
+    console.log("[loaders] vehicleMakes", vehicle);
+
+    const makes = await fetch(`/api/vehicle/makes/${vehicle.year}`, {
       signal,
     }).then((res) => {
       if (!res.ok)
         throw new Error(`Vehicle makes lookup failed (${res.status})`);
       return res.json() as Promise<string[]>;
     });
-    console.log(makes);
     return {
       options: {
-        "vehicle-make": makes.map((make) => ({ value: make, label: make })),
+        make: makes.map((make) => ({ value: make, label: make })),
       },
     };
   },
   vehicleModels: async (answers, signal) => {
-    if (!answers["vehicle-year"]) {
+    const vehicle = answers.data.vehicles?.at(-1);
+    if (!vehicle?.year) {
       throw new Error("Year is required.");
     }
-    if (!answers["vehicle-make"]) {
+    if (!vehicle?.make) {
       throw new Error("Make is required.");
     }
     const models = await fetch(
-      `/api/vehicle/models/${encodeURIComponent(String(answers["vehicle-year"]))}/${encodeURIComponent(String(answers["vehicle-make"]))}`,
+      `/api/vehicle/models/${encodeURIComponent(String(vehicle.year))}/${encodeURIComponent(String(vehicle.make))}`,
       { signal },
     ).then((res) => {
       if (!res.ok)
@@ -63,7 +67,7 @@ export const loaders: Record<LoaderKind, Loader> = {
     });
     return {
       options: {
-        "vehicle-model": models.map((model) => ({
+        model: models.map((model) => ({
           value: model,
           label: model,
         })),
@@ -71,27 +75,14 @@ export const loaders: Record<LoaderKind, Loader> = {
     };
   },
   getFeedFromMastodon: async (answers, signal) => {
-    const t = {
-      "vehicle-year": 2015,
-      "vehicle-make": "Toyota",
-      "vehicle-model": "Camry",
-      zip: "90210",
-      email: "test@example.com",
-      phone: "555-555-5555",
-    };
     const res = await fetch(`/api/mastodon/feed`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(t),
+      body: JSON.stringify(answers),
       signal,
     });
     if (!res.ok) throw new Error(`Feed failed (${res.status})`);
-    const data = (await res.json()) as Record<string, any>;
-    const { bids = [], ...extra } = data;
-    return {
-      merge: {
-        data,
-      },
-    };
+    const data = (await res.json()) as Record<string, unknown>;
+    return { data };
   },
 };

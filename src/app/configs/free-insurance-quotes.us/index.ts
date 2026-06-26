@@ -1,6 +1,8 @@
 import defaultConfig, { type DefaultConfig } from "@/app/configs/defaultConfig";
 import { mergeConfig, type DeepPartial } from "@/app/configs/mergeConfig";
 
+import { CURRENT_COMPANY_OPTIONS, toFieldOptions } from "@/lib/flow/options";
+
 const freeInsuranceQuotesOverrides = {
   site: {
     name: "free-insurance-quotes.us",
@@ -52,7 +54,7 @@ const freeInsuranceQuotesOverrides = {
   },
   flow: {
     brand: "free-insurance-quotes",
-    startStep: "date-of-birth",
+    startStep: "zip",
     steps: {
       feed: {
         id: "feed",
@@ -63,6 +65,7 @@ const freeInsuranceQuotesOverrides = {
             label: "Mastodon feed data",
             kind: "text",
             required: false,
+            uiOnly: true,
           },
         ],
         load: "getFeedFromMastodon",
@@ -71,9 +74,10 @@ const freeInsuranceQuotesOverrides = {
       "vehicle-year": {
         id: "vehicle-year",
         title: "Tell us your vehicle's model year",
+        scope: "vehicle",
         fields: [
           {
-            name: "vehicle-year",
+            name: "year",
             label: "Vehicle Year",
             kind: "radio",
             required: true,
@@ -86,9 +90,10 @@ const freeInsuranceQuotesOverrides = {
       "vehicle-make": {
         id: "vehicle-make",
         title: "Tell us your vehicle's make",
+        scope: "vehicle",
         fields: [
           {
-            name: "vehicle-make",
+            name: "make",
             label: "Vehicle Make",
             kind: "radio",
             required: true,
@@ -101,9 +106,10 @@ const freeInsuranceQuotesOverrides = {
       "vehicle-model": {
         id: "vehicle-model",
         title: "Tell us your vehicle's model",
+        scope: "vehicle",
         fields: [
           {
-            name: "vehicle-model",
+            name: "model",
             label: "Vehicle Model",
             kind: "radio",
             required: true,
@@ -111,29 +117,34 @@ const freeInsuranceQuotesOverrides = {
           },
         ],
         load: "vehicleModels",
-        next: [{ to: "contact" }],
+        next: [{ to: "policy-expiration" }],
       },
       "date-of-birth": {
         id: "date-of-birth",
         title: "What's your birthday?",
+        scope: "applicant",
+        // dob_* are uiOnly parts composed into `date_of_birth` on submit.
         fields: [
           {
             name: "dob_month",
             label: "Month",
             kind: "text",
             required: true,
+            uiOnly: true,
           },
           {
             name: "dob_day",
             label: "Day",
             kind: "text",
             required: true,
+            uiOnly: true,
           },
           {
             name: "dob_year",
             label: "Year",
             kind: "text",
             required: true,
+            uiOnly: true,
           },
         ],
         next: [
@@ -163,15 +174,16 @@ const freeInsuranceQuotesOverrides = {
       "2nd_driver_gender": {
         id: "2nd_driver_gender",
         title: "Second driver — gender",
+        scope: "driver",
         fields: [
           {
-            name: "2nd_driver_gender",
+            name: "gender",
             label: "Gender",
             kind: "radio",
             required: true,
             options: [
-              { value: "male", label: "Male" },
-              { value: "female", label: "Female" },
+              { value: "M", label: "Male" },
+              { value: "F", label: "Female" },
             ],
           },
         ],
@@ -180,15 +192,16 @@ const freeInsuranceQuotesOverrides = {
       "2nd_driver_name": {
         id: "2nd_driver_name",
         title: "Second driver — name",
+        scope: "driver",
         fields: [
           {
-            name: "2nd_driver_first_name",
+            name: "first_name",
             label: "First name",
             kind: "text",
             required: true,
           },
           {
-            name: "2nd_driver_last_name",
+            name: "last_name",
             label: "Last name",
             kind: "text",
             required: true,
@@ -199,24 +212,29 @@ const freeInsuranceQuotesOverrides = {
       "2nd_driver_dob": {
         id: "2nd_driver_dob",
         title: "Second driver — date of birth",
+        scope: "driver",
+        // dob_* are uiOnly parts composed into the driver's `date_of_birth`.
         fields: [
           {
-            name: "2nd_driver_dob_month",
+            name: "dob_month",
             label: "Month",
             kind: "text",
             required: true,
+            uiOnly: true,
           },
           {
-            name: "2nd_driver_dob_day",
+            name: "dob_day",
             label: "Day",
             kind: "text",
             required: true,
+            uiOnly: true,
           },
           {
-            name: "2nd_driver_dob_year",
+            name: "dob_year",
             label: "Year",
             kind: "text",
             required: true,
+            uiOnly: true,
           },
         ],
         next: [{ to: "zip" }],
@@ -225,10 +243,112 @@ const freeInsuranceQuotesOverrides = {
       zip: {
         id: "zip",
         title: "Where do you live?",
+        scope: "applicant",
         fields: [
-          { name: "zip", label: "ZIP code", kind: "zip", required: true },
+          { name: "zipcode", label: "ZIP code", kind: "zip", required: true },
         ],
         next: [{ to: "vehicle-year" }],
+      },
+      "marital-status": {
+        id: "marital-status",
+        title: "What's your marital status?",
+        scope: "applicant",
+        fields: [
+          {
+            name: "marital_status",
+            label: "Marital status",
+            kind: "radio",
+            required: true,
+            options: [
+              { value: "Single", label: "Single" },
+              { value: "Married", label: "Married" },
+            ],
+          },
+        ],
+        next: [{ to: "zip" }],
+      },
+      "policy-expiration": {
+        id: "policy-expiration",
+        title: "When does your current policy expire?",
+        scope: "applicant",
+        fields: [
+          {
+            name: "current_policy_expires",
+            label: "Current policy expires",
+            kind: "radio",
+            options: [
+              {
+                value: "2",
+                label: "1-3 months",
+              },
+              {
+                value: "5",
+                label: "4-6 months",
+              },
+              {
+                value: "9",
+                label: "7-12 months",
+              },
+              {
+                value: "12",
+                label: "1+ years",
+              },
+              {
+                value: "0",
+                label: "Currently uninsured",
+              },
+            ],
+            required: true,
+          },
+        ],
+        next: [{ to: "current-company" }],
+      },
+      "currently-insured": {
+        id: "currently-insured",
+        title: "Are you currently insured?",
+        scope: "applicant",
+        fields: [
+          {
+            name: "currently_insured",
+            label: "Currently insured?",
+            kind: "boolean",
+            required: true,
+          },
+        ],
+        next: [{ to: "current-company" }],
+      },
+      "current-company": {
+        id: "current-company",
+        title: "Who's your current insurance company?",
+        scope: "applicant",
+        fields: [
+          {
+            name: "current_company",
+            label: "Current insurance company",
+            kind: "radio",
+            required: true,
+            options: toFieldOptions(CURRENT_COMPANY_OPTIONS),
+          },
+        ],
+        next: [{ to: "gender" }],
+      },
+      gender: {
+        id: "gender",
+        title: "What's your gender?",
+        scope: "applicant",
+        fields: [
+          {
+            name: "gender",
+            label: "Gender",
+            kind: "radio",
+            required: true,
+            options: [
+              { value: "M", label: "Male" },
+              { value: "F", label: "Female" },
+            ],
+          },
+        ],
+        next: [{ to: "date-of-birth" }],
       },
       contact: {
         id: "contact",
@@ -249,6 +369,7 @@ const freeInsuranceQuotesOverrides = {
             label: "Mastodon feed data",
             kind: "text",
             required: false,
+            uiOnly: true,
           },
         ],
         next: [],

@@ -6,10 +6,13 @@
  * resolveNext(), so branching stays declarative in the flow config.
  */
 
-import type { AnswerMap, ResolveKind } from "./types";
+import type { AnswerMap, MastodonData, ResolveKind } from "./types";
 
 export type ResolverResult = {
-  merge?: AnswerMap;
+  /** Schema-valid fields to fold back into the posted payload. */
+  mergeData?: Partial<MastodonData>;
+  /** Non-schema results (bids, lookups) stored separately from the payload. */
+  fieldData?: Record<string, any>[];
   /** Field option lists to store separately from user answers. */
   options?: Record<string, { value: string; label: string }[]>;
 };
@@ -30,13 +33,8 @@ export const resolvers: Record<ResolveKind, Resolver> = {
     });
     if (!res.ok) throw new Error(`Feed failed (${res.status})`);
     const data = (await res.json()) as Record<string, any>;
-    const { bids = [], ...extra } = data;
-    return {
-      merge: {
-        bids: data.bids ?? [],
-        ...extra,
-      },
-    };
+    // bids are a result, not part of the posted payload -> fieldData.
+    return { fieldData: [{ bids: data.bids ?? [] }] };
   },
   /** Enriches with company info. STUB. */
   companyInfo: async (answers, signal) => {
@@ -48,6 +46,6 @@ export const resolvers: Record<ResolveKind, Resolver> = {
     });
     if (!res.ok) throw new Error(`Company info lookup failed (${res.status})`);
     const data = (await res.json()) as { companyName?: string };
-    return { merge: { companyName: data.companyName ?? null } };
+    return { fieldData: [{ companyName: data.companyName ?? null }] };
   },
 };

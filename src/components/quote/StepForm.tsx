@@ -16,12 +16,8 @@ import { useEffect, useState } from "react";
 
 import { useFlowActions, useFlowState } from "./QuoteProvider";
 import { useParamsActions, useParamsState } from "../utils/ParamsProvider";
-import type {
-  AnswerValue,
-  ExtraButton,
-  ExtraButtonAction,
-  FieldDef,
-} from "@/lib/flow/types";
+import { seedDraft } from "@/lib/flow/logic";
+import type { AnswerValue, ExtraButton, FieldDef } from "@/lib/flow/types";
 
 export function StepForm({ stepId }: { stepId: string }) {
   const isLoading = useFlowState()?.status === "loading";
@@ -40,23 +36,23 @@ export function StepForm({ stepId }: { stepId: string }) {
       updateParams({ lastStep: stepId });
     };
     loadData();
-  }, []);
+  }, [state.answers]);
 
-  const fields: FieldDef[] =
-    state.config.steps[state.currentStepId]?.fields ?? [];
-
-  console.log("state", state);
-  // Log the entire state object to inspect its structure and contents
+  // Render the step from the validated URL `stepId` (the server page already
+  // resolved + notFound()-guarded it). Falling back to currentStepId only if
+  // the prop is somehow missing. Using currentStepId directly is unsafe — it
+  // can be stale (HMR while editing config, or refresh before draft-resume).
+  const step = state.config.steps[state.currentStepId];
+  const fields: FieldDef[] = step?.fields ?? [];
 
   const paramsState = useParamsState();
   const { updateParams } = useParamsActions();
 
-  // Seed local draft from already-committed answers (so back/edit pre-fills).
-  const [draft, setDraft] = useState<Record<string, AnswerValue>>(() => {
-    const seed: Record<string, AnswerValue> = {};
-    for (const f of fields) seed[f.name] = state.answers[f.name] ?? "";
-    return seed;
-  });
+  // Seed local draft from already-committed answers, scoped to this step's
+  // entity + cursor (so Back/edit pre-fills; dob_* decomposed from date_of_birth).
+  const [draft, setDraft] = useState<Record<string, AnswerValue>>(() =>
+    seedDraft(state.answers.data, step, state.cursors),
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const setField = (name: string, value: AnswerValue) =>
@@ -71,6 +67,7 @@ export function StepForm({ stepId }: { stepId: string }) {
 
   const resolving = state.status === "resolving";
 
+  console.log("[StepForm] render", state);
   /**
    * Extra-button handlers live here on the client — config only names an
    * `action` (a serializable string), never a function, so FlowConfig can still
@@ -86,9 +83,19 @@ export function StepForm({ stepId }: { stepId: string }) {
     let result: Awaited<ReturnType<typeof submitStep>>;
     switch (btn.action) {
       case "addSecondDriver":
-        // Commit this step's answers + the branch flag in one shot; the
+        // Open a new driver slot (cursor advances) and set the branch flag; the
         // `2nd_driver eq true` guard in config then routes into the sub-flow.
-        result = await submitStep({ ...draft, "2nd_driver": true });
+        result = await submitStep(draft, {
+          flags: { "2nd_driver": true },
+          addEntity: "driver",
+        });
+        break;
+      case "markUninsured":
+        // Alternative submit: no bucket selection, just record uninsured.
+        result = await submitStep(draft, {
+          setData: { currently_insured: false },
+          skipValidation: true,
+        });
         break;
       default:
         return;
@@ -181,7 +188,7 @@ export function StepForm({ stepId }: { stepId: string }) {
           {resolving ? "Checking…" : "Continue"}
         </button>
 
-        {state.config.steps[state.currentStepId].extraButtons?.map((btn) => (
+        {step?.extraButtons?.map((btn) => (
           <button
             type="button"
             onClick={() => runExtraButton(btn)}

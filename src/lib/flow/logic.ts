@@ -1,17 +1,47 @@
 /**
- * Pure flow logic. No React, no I/O — just functions over (step, answers).
+ * Pure flow logic. No React, no I/O — just functions over (step, draft, data).
  * Being pure means this is trivially unit-testable, which matters because
- * this is where branching correctness lives.
+ * this is where branching + the scope/cursor mapping live.
  */
 
-import type { AnswerMap, AnswerValue, FieldDef, Guard, StepDef } from "./types";
+import type {
+  AnswerValue,
+  Cursors,
+  FieldDef,
+  FlowScope,
+  Guard,
+  MastodonData,
+  StepDef,
+  StepDraft,
+} from "./types";
+import { policyExpirationMonths, type PolicyExpiration } from "./options";
+
+/** scope -> the MastodonData array it writes into. */
+const ARRAY_KEY = {
+  driver: "drivers",
+  vehicle: "vehicles",
+  incident: "incidents",
+} as const;
+
+type EntityScope = Exclude<FlowScope, "applicant">;
+type EntityRow = Record<string, AnswerValue>;
+
+function pad2(v: AnswerValue): string {
+  return String(v).padStart(2, "0");
+}
 
 /* ------------------------------------------------------------------ */
 /* Guards & branching                                                  */
 /* ------------------------------------------------------------------ */
 
-function evalGuard(g: Guard, answers: AnswerMap): boolean {
-  const actual = answers[g.field];
+/**
+ * Guards evaluate against a flat lookup (top-level scalar payload fields +
+ * control flags), not the nested payload — branching in this funnel only keys
+ * off applicant-level values and flags like `2nd_driver`. Build it with
+ * guardLookup().
+ */
+function evalGuard(g: Guard, lookup: Record<string, AnswerValue>): boolean {
+  const actual = lookup[g.field];
   switch (g.op) {
     case "exists":
       return actual !== undefined && actual !== null && actual !== "";
@@ -31,17 +61,125 @@ function evalGuard(g: Guard, answers: AnswerMap): boolean {
 }
 
 /**
- * Given the current step and the (merged) answers, return the next step id.
+ * Flat view used to evaluate guards: every scalar top-level payload field plus
+ * the control flags (drivers/vehicles/incidents/custom objects are excluded).
+ */
+export function guardLookup(
+  data: MastodonData,
+  flags: Record<string, AnswerValue> = {},
+): Record<string, AnswerValue> {
+  const scalars: Record<string, AnswerValue> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (v === null || typeof v !== "object") scalars[k] = v as AnswerValue;
+  }
+  return { ...scalars, ...flags };
+}
+
+/**
+ * Given the current step and a guard lookup, return the next step id.
  * Transitions are tried in order; the first whose guards all pass wins.
  * Returns null if nothing matches (a config gap — surface it, don't swallow).
  */
-export function resolveNext(step: StepDef, answers: AnswerMap): string | null {
+export function resolveNext(
+  step: StepDef,
+  lookup: Record<string, AnswerValue>,
+): string | null {
   for (const t of step.next) {
-    if (!t.when || t.when.every((g) => evalGuard(g, answers))) {
+    if (!t.when || t.when.every((g) => evalGuard(g, lookup))) {
       return t.to;
     }
   }
   return null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Draft <-> payload mapping (scope + cursor)                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Collect the schema-bound values from a step's draft. `uiOnly` fields are
+ * never written by name; the split dob_* parts are composed into a single
+ * `date_of_birth` ("YYYY-MM-DD").
+ */
+function collectValues(step: StepDef, draft: StepDraft): EntityRow {
+  const out: EntityRow = {};
+  for (const f of step.fields) {
+    if ("uiOnly" in f && f.uiOnly) continue;
+    if (draft[f.name] !== undefined) out[f.name] = draft[f.name];
+  }
+  if (draft.dob_year && draft.dob_month && draft.dob_day) {
+    out.date_of_birth = `${draft.dob_year}-${pad2(draft.dob_month)}-${pad2(
+      draft.dob_day,
+    )}`;
+  }
+  // uiOnly policy-expiration bucket -> integer months + currently_insured.
+  if (draft.policy_expiration) {
+    out.current_policy_expires_months = policyExpirationMonths(
+      draft.policy_expiration as PolicyExpiration,
+    );
+    out.currently_insured = true;
+  }
+  return out;
+}
+
+/**
+ * Apply a step's draft to the payload. Applicant steps write to the top level;
+ * driver/vehicle/incident steps write to `data.<entity>s[cursor]`. Returns a
+ * new MastodonData (pure).
+ */
+export function applyStepDraft(
+  data: MastodonData,
+  step: StepDef,
+  draft: StepDraft,
+  cursors: Cursors,
+): MastodonData {
+  console.log(step);
+  const values = collectValues(step, draft);
+  const scope = step.scope ?? "applicant";
+  if (scope === "applicant") {
+    // Cast: `values` is keyed by FlowFieldName at the config layer.
+    return { ...data, ...values } as MastodonData;
+  }
+  const key = ARRAY_KEY[scope as EntityScope];
+  const idx = cursors[scope as EntityScope];
+  const list = [...((data[key] as EntityRow[] | undefined) ?? [])];
+  list[idx] = { ...(list[idx] ?? {}), ...values };
+  return { ...data, [key]: list } as MastodonData;
+}
+
+/**
+ * Reverse of applyStepDraft: seed a step's local draft from committed data so
+ * Back/edit pre-fills. Decomposes `date_of_birth` back into dob_* parts.
+ */
+export function seedDraft(
+  data: MastodonData,
+  step: StepDef | undefined,
+  cursors: Cursors,
+): StepDraft {
+  if (!step) return {};
+  const scope = step.scope ?? "applicant";
+  const src: EntityRow =
+    scope === "applicant"
+      ? (data as EntityRow)
+      : ((data[ARRAY_KEY[scope as EntityScope]] as EntityRow[] | undefined)?.[
+          cursors[scope as EntityScope]
+        ] ?? {});
+
+  const draft: StepDraft = {};
+  for (const f of step.fields) {
+    const uiOnly = "uiOnly" in f && f.uiOnly;
+    draft[f.name] = (uiOnly ? undefined : src[f.name]) ?? "";
+  }
+  if (
+    step.fields.some((f) => f.name === "dob_year") &&
+    typeof src.date_of_birth === "string"
+  ) {
+    const [y, m, d] = src.date_of_birth.split("-");
+    draft.dob_year = y ?? "";
+    draft.dob_month = m ?? "";
+    draft.dob_day = d ?? "";
+  }
+  return draft;
 }
 
 /* ------------------------------------------------------------------ */
@@ -85,10 +223,6 @@ function validateField(
         return `${field.label} must be a 5-digit ZIP.`;
       break;
     case "select":
-      if (field.options && !field.options.some((o) => o.value === value)) {
-        return `Select a valid ${field.label}.`;
-      }
-      break;
     case "radio":
       if (field.options && !field.options.some((o) => o.value === value)) {
         return `Select a valid ${field.label}.`;
@@ -99,19 +233,16 @@ function validateField(
 }
 
 /**
- * Validate the answers for a step. SUBMIT and navigation are the same gate:
+ * Validate a step's flat draft. SUBMIT and navigation are the same gate:
  * an invalid step does not advance — it returns errors for the form to show.
- *
- * For richer rules (cross-field, async uniqueness) swap this for zod schemas
- * attached per-step; the controller contract (ok + errors) stays identical.
  */
 export function validateStep(
   step: StepDef,
-  answers: AnswerMap,
+  draft: StepDraft,
 ): ValidationResult {
   const errors: Record<string, string> = {};
   for (const field of step.fields) {
-    const err = validateField(field, answers[field.name]);
+    const err = validateField(field, draft[field.name]);
     if (err) errors[field.name] = err;
   }
   return { ok: Object.keys(errors).length === 0, errors };

@@ -33,6 +33,8 @@ import {
 } from "react";
 
 import {
+  applyStepDraft,
+  guardLookup,
   resolveNext,
   stepPath,
   validateStep,
@@ -46,7 +48,13 @@ import {
 } from "@/lib/flow/machine";
 import { resolvers } from "@/lib/flow/resolvers";
 import { LoaderResult, loaders } from "@/lib/flow/loaders";
-import type { AnswerMap, LoaderKind } from "@/lib/flow/types";
+import type {
+  AnswerMap,
+  AnswerValue,
+  FlowScope,
+  MastodonData,
+  StepDraft,
+} from "@/lib/flow/types";
 
 /* ------------------------------------------------------------------ */
 /* Contexts                                                            */
@@ -54,10 +62,25 @@ import type { AnswerMap, LoaderKind } from "@/lib/flow/types";
 
 const FlowStateContext = createContext<FlowState | null>(null);
 
+/** Options a step submit can carry (e.g. the "Add Driver" button). */
+export type SubmitOptions = {
+  /** Control flags folded into branching (not posted) — e.g. { 2nd_driver: true }. */
+  flags?: Record<string, AnswerValue>;
+  /** Open a new repeatable entity and point its cursor at the new slot. */
+  addEntity?: FlowScope;
+  /** Schema fields a button sets directly (e.g. Currently Uninsured -> currently_insured:false). */
+  setData?: Partial<MastodonData>;
+  /** Alternative-submit buttons (e.g. Currently Uninsured) skip field validation. */
+  skipValidation?: boolean;
+};
+
 type FlowActions = {
-  /** Validate + commit a step's answers, run any resolver, branch, navigate.
+  /** Validate + commit a step's draft, run any resolver, branch, navigate.
    *  Returns validation errors if the step is invalid (no transition). */
-  submitStep: (answers: AnswerMap) => Promise<ValidationResult>;
+  submitStep: (
+    draft: StepDraft,
+    opts?: SubmitOptions,
+  ) => Promise<ValidationResult>;
   goBack: () => void;
   /** Edit-from-review: jump to an already-completed step. */
   jumpTo: (stepId: string) => void;
@@ -126,35 +149,45 @@ export function QuoteProvider({
   }, []);
 
   const submitStep = useCallback<FlowActions["submitStep"]>(
-    async (stepAnswers) => {
+    async (draft, opts) => {
       const step = state.config.steps[state.currentStepId];
-      const merged = { ...state.answers, ...stepAnswers };
 
       // 1. The gate: validation and navigation are the same decision.
-      const result = validateStep(step, merged);
-      if (!result.ok) return result;
+      //    Alternative-submit buttons (e.g. Currently Uninsured) skip it.
+      if (!opts?.skipValidation) {
+        const result = validateStep(step, draft);
+        if (!result.ok) return result;
+      }
 
-      // 2. Commit answers (commit-on-submit).
-      dispatch({ type: "MERGE_ANSWERS", answers: stepAnswers });
+      // 2. Optionally open a new repeatable entity (Add Driver/Vehicle) and
+      //    point its cursor at the new slot — computed locally so we don't
+      //    depend on async-stale reducer state.
+      let data: MastodonData = state.answers.data;
+      let cursors = state.cursors;
+      if (opts?.addEntity) {
+        const scope = opts.addEntity as Exclude<FlowScope, "applicant">;
+        const key = `${scope}s` as "drivers" | "vehicles" | "incidents";
+        const list = [...((data[key] as Record<string, unknown>[]) ?? []), {}];
+        data = { ...data, [key]: list } as MastodonData;
+        cursors = { ...cursors, [scope]: list.length - 1 };
+      }
 
-      // 3. Async resolve, if the step has one (rater, company info, ...).
-      let finalAnswers = merged;
-      console.log(
-        "[QuoteProvider] step resolve:",
-        state.currentStepId,
-        step.resolve,
-      );
+      // 3. Commit the draft into the right slice (applicant vs entity[cursor]),
+      //    then apply any schema fields a button set directly.
+      let nextData = applyStepDraft(data, step, draft, cursors);
+      if (opts?.setData) nextData = { ...nextData, ...opts.setData };
+      const flags = { ...state.flags, ...(opts?.flags ?? {}) };
+
+      // 4. Async resolve, if the step has one (rater, company info, ...).
       if (step.resolve) {
         dispatch({ type: "BEGIN_RESOLVE" });
         try {
-          const { merge, options } = await resolvers[step.resolve](merged);
-          if (options) {
-            dispatch({ type: "SET_FIELD_OPTIONS", options });
-          }
-          if (merge) {
-            dispatch({ type: "MERGE_ANSWERS", answers: merge });
-            finalAnswers = { ...merged, ...merge };
-          }
+          const { mergeData, fieldData, options } = await resolvers[
+            step.resolve
+          ]({ data: nextData });
+          if (options) dispatch({ type: "SET_FIELD_OPTIONS", options });
+          if (fieldData) dispatch({ type: "SET_FIELD_DATA", fieldData });
+          if (mergeData) nextData = { ...nextData, ...mergeData };
         } catch (err) {
           const message =
             err instanceof Error ? err.message : "Something went wrong.";
@@ -164,8 +197,11 @@ export function QuoteProvider({
         }
       }
 
-      // 4. Branch on the (possibly enriched) answers — declarative, from config.
-      const nextStepId = resolveNext(step, finalAnswers);
+      // 5. Commit-on-submit: payload + cursors + flags in one atomic action.
+      dispatch({ type: "COMMIT_STEP", data: nextData, cursors, flags });
+
+      // 6. Branch on a flat guard lookup (scalar payload fields + flags).
+      const nextStepId = resolveNext(step, guardLookup(nextData, flags));
       if (!nextStepId) {
         dispatch({
           type: "RESOLVE_ERROR",
@@ -174,11 +210,13 @@ export function QuoteProvider({
         return { ok: true, errors: {} };
       }
 
-      // 5. Advance state, then mirror it into the URL (soft nav; layout persists).
+      // 7. Advance state, then mirror it into the URL (soft nav; layout persists).
       dispatch({ type: "ADVANCE", toStepId: nextStepId });
       persist({
         ...state,
-        answers: finalAnswers,
+        answers: { data: nextData },
+        cursors,
+        flags,
         visited: [...state.visited, state.currentStepId],
         currentStepId: nextStepId,
       });
