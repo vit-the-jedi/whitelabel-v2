@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-
 export default function RootPage() {
-  redirect("/quote");
+  return <div>Welcome to the White Label V2 App</div>;
 }

@@ -1,25 +1,22 @@
-import protectCom, {
-  subdomainConfigs as protectComSubdomains,
-} from "./protect.com/";
-import freeInsuranceQuotes, {
-  subdomainConfigs as freeInsuranceQuotesSubdomains,
-} from "./free-insurance-quotes.us/";
+import protectCom, { subdomainConfigs as protectComSubdomains } from "./protect.com/";
+import freeInsuranceQuotes, { subdomainConfigs as freeInsuranceQuotesSubdomains } from "./free-insurance-quotes.us/";
+import searchMyNewJob, { subdomainConfigs as searchMyNewJobSubdomains } from "./searchmynewjob.com/";
 import { type DefaultConfig } from "@/app/configs/defaultConfig";
 import defaultConfig from "@/app/configs/defaultConfig";
 import { mergeConfig, type DeepPartial } from "@/app/configs/mergeConfig";
+import searchMyNewJobConfig from "./searchmynewjob.com";
 
 export const configs: Record<string, DefaultConfig> = {
   "protect.com": protectCom,
   "free-insurance-quotes.us": freeInsuranceQuotes,
+  "searchmynewjob.com": searchMyNewJob,
 };
 
 // Map of domain -> subdomain -> partial overrides
-const subdomainOverrides: Record<
-  string,
-  Record<string, DeepPartial<DefaultConfig>>
-> = {
+const subdomainOverrides: Record<string, Record<string, DeepPartial<DefaultConfig>>> = {
   "protect.com": protectComSubdomains,
   "free-insurance-quotes.us": freeInsuranceQuotesSubdomains,
+  "searchmynewjob.com": searchMyNewJobSubdomains,
 };
 
 const normalizeHost = (host: string): string =>
@@ -61,10 +58,7 @@ export const getConfigForHost = (host: string): DefaultConfig => {
   return defaultConfig;
 };
 
-export const getSubdomainConfig = (
-  domain: string,
-  subdomain: string,
-): DeepPartial<DefaultConfig> | null => {
+export const getSubdomainConfig = (domain: string, subdomain: string): DeepPartial<DefaultConfig> | null => {
   const configKey = getConfigKeyForHost(domain);
   if (!configKey) return null;
   return subdomainOverrides[configKey]?.[subdomain] ?? null;

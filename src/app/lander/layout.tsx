@@ -7,6 +7,7 @@
  */
 
 import { Metadata } from "next";
+import { Head } from "next/document";
 import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -18,11 +19,11 @@ import { buildInitialState } from "@/lib/flow/machine";
 import { getFontForConfig } from "@/lib/fonts";
 
 export const metadata: Metadata = {
-  title: "Get a Quote",
+  title: "Lander",
   description: "Answer a few questions to get your free insurance quote.",
 };
 
-export default async function QuoteLayout({ children }: { children: ReactNode }) {
+export default async function LanderLayout({ children }: { children: ReactNode }) {
   const brand = (await headers()).get("x-site-config");
   if (!brand) notFound();
 
@@ -48,11 +49,9 @@ export default async function QuoteLayout({ children }: { children: ReactNode })
         } as React.CSSProperties
       }
     >
-      <main style={{ maxWidth: 560, margin: "0 auto", padding: 16 }}>
-        <QuoteProvider initialState={initialState}>
-          <ParamsProvider initialParams={{}}>{children}</ParamsProvider>
-        </QuoteProvider>
-      </main>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+
+      <main style={{ maxWidth: "90vw", margin: "0 auto", padding: 16 }}>{children}</main>
     </div>
   );
 }

@@ -14,6 +14,8 @@ export default function proxy(request: NextRequest) {
   const domainParam = queryParams.get("domain");
   const effectiveDomain = domainCookie ?? domainParam ?? domain;
 
+  console.log(effectiveDomain);
+
   requestHeaders.set("x-site-domain", effectiveDomain);
   requestHeaders.set("x-site-host", effectiveDomain);
 
@@ -22,12 +24,10 @@ export default function proxy(request: NextRequest) {
     requestHeaders.set("x-site-subdomain", subdomainParam);
   }
 
-  const devConfigParam =
-    process.env.NODE_ENV === "development" ? queryParams.get("config") : null;
+  const devConfigParam = process.env.NODE_ENV === "development" ? queryParams.get("config") : null;
 
   const resolvedKey = devConfigParam ?? getConfigKeyForHost(effectiveDomain);
-  const configKey =
-    resolvedKey ?? request.cookies.get("x-site-config")?.value ?? null;
+  const configKey = resolvedKey ?? request.cookies.get("x-site-config")?.value ?? null;
 
   if (configKey) {
     requestHeaders.set("x-site-config", configKey);
