@@ -13,49 +13,66 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { GoogleTagManager } from "@next/third-parties/google";
+
 import { getSiteConfig } from "@/lib/flow/config";
 import { getFontForConfig } from "@/lib/fonts";
-import Header from "@/components/Header";
 import { getConfigKeyForHost } from "./configs";
 
 import { landerComponentMap } from "./LanderComponentMap";
 
-export const metadata: Metadata = {
-  title: "Get a Quote",
-  description: "Answer a few questions to get your free insurance quote.",
+const getLander = async (brandKey: string) => {
+  const pathname = (await headers()).get("x-pathname") ?? "/";
+
+  if (pathname === "/") {
+    return landerComponentMap[brandKey];
+  }
+  return null;
 };
 
-export default async function QuoteLayout({ children }: { children: ReactNode }) {
+export async function generateMetadata(): Promise<Metadata> {
+  const brand = (await headers()).get("x-site-config");
+  const siteConfig = brand ? await getSiteConfig(brand) : null;
+
+  return {
+    title: siteConfig?.site?.title ?? siteConfig?.site?.name,
+    description: siteConfig?.site?.description,
+  };
+}
+
+export default async function LanderLayout({ children }: { children: ReactNode }) {
   const brand = (await headers()).get("x-site-config");
   if (!brand) notFound();
 
   const siteConfig = await getSiteConfig(brand);
   if (!siteConfig || !siteConfig.flow) notFound();
 
-  const { theme, site, flow } = siteConfig;
+  const { theme, site, features, flow } = siteConfig;
   const font = getFontForConfig(theme.googleFont);
 
   const brandKey = getConfigKeyForHost(brand) ?? "searchmynewjob";
-
-  const Lander = landerComponentMap[brandKey];
-
-  console.log({ brand, brandKey, Lander });
+  const Lander = await getLander(brandKey);
 
   return (
     <html>
+      <head>
+        {features?.GTM?.enabled && <GoogleTagManager gtmId={features?.GTM?.id ?? ""} />}
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+      </head>
       <body>
-        <Header logoUrl={`/images/logos/${site.logo}`} />
         <div
           className={font.className}
           style={
             {
-              "--brand-primary": theme.primaryColor,
-              "--brand-accent": theme.secondaryColor,
+              "--primaryColor": theme.primaryColor,
+              "--secondaryColor": theme.secondaryColor,
+              "--fontFamily": theme.fontFamily,
+              "--radioButtonColor": theme.radioButtonColor,
               minHeight: "100vh",
             } as React.CSSProperties
           }
         >
-          <main style={{ margin: "0 auto", padding: 16 }}>{Lander ? <Lander /> : children}</main>
+          <main>{Lander ? <Lander /> : children}</main>
         </div>
       </body>
     </html>

@@ -5,11 +5,13 @@ import { type DefaultConfig } from "@/app/configs/defaultConfig";
 import defaultConfig from "@/app/configs/defaultConfig";
 import { mergeConfig, type DeepPartial } from "@/app/configs/mergeConfig";
 import searchMyNewJobConfig from "./searchmynewjob.com";
+import simplyJobsConfig from "./simplyjobs.com";
 
 export const configs: Record<string, DefaultConfig> = {
   "protect.com": protectCom,
   "free-insurance-quotes.us": freeInsuranceQuotes,
   "searchmynewjob.com": searchMyNewJob,
+  "simplyjobs.com": simplyJobsConfig,
 };
 
 // Map of domain -> subdomain -> partial overrides
@@ -17,6 +19,7 @@ const subdomainOverrides: Record<string, Record<string, DeepPartial<DefaultConfi
   "protect.com": protectComSubdomains,
   "free-insurance-quotes.us": freeInsuranceQuotesSubdomains,
   "searchmynewjob.com": searchMyNewJobSubdomains,
+  //"simplyjobs.com": simplyJobsSubdomains,
 };
 
 const normalizeHost = (host: string): string =>

@@ -3,14 +3,14 @@ import { mergeConfig, type DeepPartial } from "@/app/configs/mergeConfig";
 
 import { CURRENT_COMPANY_OPTIONS, toFieldOptions } from "@/lib/flow/options";
 
-const searchMyNewJobOverrides = {
+const simplyJobsOverrides = {
   site: {
-    name: "Search My New Job",
-    title: "Job Search - Search My New Job",
+    name: "SimplyJobs",
+    title: "Job Search - SimplyJobs",
     description:
-      "Search My New Job is a job and career opportunities search engine. Search for jobs near you and find hiring and recruiting advice.",
-    url: "https://www.searchmynewjob.com",
-    logo: "searchmynewjob_logo.png",
+      "SimplyJobs is a job and career opportunities search engine. Search for jobs near you and find hiring and recruiting advice.",
+    url: "https://www.simplyjobs.com",
+    logo: "simplyjobs_logo.png",
     c2cnumber: "855-979-7491",
     nav: {
       text: "Find competitive car insurance rates in minutes",
@@ -46,14 +46,14 @@ const searchMyNewJobOverrides = {
   },
   theme: {
     layout: "car-insurance",
-    primaryColor: "#00619e",
-    secondaryColor: "#1f2937",
-    fontFamily: "Nunito Sans, sans-serif",
-    googleFont: "Nunito Sans",
+    primaryColor: "#0084f8",
+    secondaryColor: "#FB5A80",
+    fontFamily: "Work Sans, sans-serif",
+    googleFont: "Work Sans",
     radioButtonColor: "#eef5fa",
   },
   flow: {
-    brand: "search-my-new-job",
+    brand: "simplyjobs",
     startStep: "zip",
     steps: {
       feed: {
@@ -384,7 +384,7 @@ const searchMyNewJobOverrides = {
   },
 } satisfies DeepPartial<DefaultConfig>;
 
-const searchMyNewJobConfig: DefaultConfig = mergeConfig(defaultConfig, searchMyNewJobOverrides);
+const simplyJobsConfig: DefaultConfig = mergeConfig(defaultConfig, simplyJobsOverrides);
 
 export const subdomainConfigs: Record<string, DeepPartial<DefaultConfig>> = {
   apply: {
@@ -399,4 +399,4 @@ export const subdomainConfigs: Record<string, DeepPartial<DefaultConfig>> = {
   },
 };
 
-export default searchMyNewJobConfig;
+export default simplyJobsConfig;
