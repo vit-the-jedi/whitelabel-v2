@@ -1,7 +1,10 @@
 import { generateDefaultFlowSteps } from "@/lib/flow/config";
 import type { FlowConfig } from "@/lib/flow/types";
+import type { JobsConfig, Vertical } from "./verticals";
 
 export type DefaultConfig = {
+  /** Which business-logic module + lander template this brand uses. */
+  vertical: Vertical;
   site: {
     name: string;
     title: string;
@@ -52,11 +55,14 @@ export type DefaultConfig = {
       scriptUrl?: string;
     };
   };
-  /** Optional funnel flow config for this site. */
+  /** Optional funnel flow config for this site. Only used by the "quote" vertical. */
   flow?: FlowConfig;
+  /** Only used by the "jobs" vertical. */
+  jobs?: JobsConfig;
 };
 
 const defaultConfig: DefaultConfig = {
+  vertical: "auto-insurance",
   site: {
     name: "My Site",
     title: "Welcome to My Site",

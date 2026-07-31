@@ -17,13 +17,12 @@ import { GoogleTagManager } from "@next/third-parties/google";
 
 import { getSiteConfig } from "@/lib/flow/config";
 import { getFontForConfig } from "@/lib/fonts";
-import { getConfigKeyForHost } from "./configs";
 
 import { landerComponentMap } from "./LanderComponentMap";
 
-const getLander = (brandKey: string, pathname: string) => {
+const getLander = (vertical: string, pathname: string) => {
   if (pathname === "/") {
-    return landerComponentMap[brandKey];
+    return landerComponentMap[vertical] ?? null;
   }
   return null;
 };
@@ -44,25 +43,17 @@ export default async function LanderLayout({ children }: { children: ReactNode }
   if (!brand) notFound();
 
   const siteConfig = await getSiteConfig(brand);
-  if (!siteConfig || !siteConfig.flow) notFound();
+  if (!siteConfig) notFound();
+  // The "quote" vertical is meaningless without a flow; other verticals
+  // (e.g. "jobs") don't have one at all.
+  if (siteConfig.vertical === "auto-insurance" && !siteConfig.flow) notFound();
 
-  const { theme, site, features, flow } = siteConfig;
+  const { theme, features } = siteConfig;
   const font = getFontForConfig(theme.googleFont);
 
-  const brandKey = getConfigKeyForHost(brand) ?? "searchmynewjob";
   const pathname = requestHeaders.get("x-pathname") ?? "/";
-  const Lander = getLander(brandKey, pathname);
+  const Lander = getLander(siteConfig.vertical, pathname);
 
-  const requestState = {
-    brand,
-    siteConfig,
-    theme,
-    site,
-    features,
-    flow,
-    font,
-    brandKey,
-  };
   return (
     <html>
       <head>
@@ -82,7 +73,7 @@ export default async function LanderLayout({ children }: { children: ReactNode }
             } as React.CSSProperties
           }
         >
-          <main>{Lander ? <Lander /> : children}</main>
+          <main>{Lander ? <Lander siteConfig={siteConfig} /> : children}</main>
         </div>
       </body>
     </html>
