@@ -1,3 +1,14 @@
+import Header from "@/components/Header";
+
+function BrandMark({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flex items-center gap-2 text-sky-400 ${className}`}>
+      <span className="material-icons text-2xl border-2 border-sky-400 rounded-full p-1">search</span>
+      <span className="text-2xl">SimplyJobs</span>
+    </div>
+  );
+}
+
 export default function RootPage() {
   const jobCategoryColumns = [
     [
@@ -54,14 +65,23 @@ export default function RootPage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col">
-      <div className="px-6 py-4 border-b">
+      <div className="px-6 py-4">
         <a href="https://simplyjobs.com" className="font-bold text-lg text-gray-900">
-          SimplyJobs
+          <Header logoUrl="/images/logos/simplyjobs_logo.png" />
         </a>
       </div>
 
-      <div className="px-6 py-12">
-        <form action="https://form.simplyjobs.com" className="max-w-4xl mx-auto">
+      <div
+        className="px-6 py-12"
+        style={{
+          backgroundColor: "var(--primaryColor)",
+          backgroundImage: "url('/images/landers/simplyjobs.com/cityscape.png')",
+          backgroundSize: "50%",
+          backgroundPosition: "bottom right",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <form action="https://form.simplyjobs.com" className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
           <h1 className="text-3xl font-bold text-center mb-8">
             We found 0<span className="text-gray-400"> Jobs</span> near you!
           </h1>
@@ -118,7 +138,7 @@ export default function RootPage() {
         </form>
       </div>
 
-      <main className="flex-1 px-6 py-8 border-t">
+      <main className="flex-1 px-6 py-8 bg-gray-100">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h2 className="text-xl font-semibold mb-4">Jobs by Category</h2>
@@ -165,7 +185,7 @@ export default function RootPage() {
         </div>
       </main>
 
-      <footer className="px-6 py-10 text-center border-t">
+      <footer className="px-6 py-10 text-center">
         <a href="/" className="font-bold text-lg text-gray-900">
           SimplyJobs
         </a>

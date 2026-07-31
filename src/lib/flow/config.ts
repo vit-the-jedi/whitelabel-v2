@@ -7,17 +7,18 @@ import type { Draft, FlowConfig, StepDef } from "./types";
 import type { DefaultConfig } from "@/app/configs/defaultConfig";
 import { configs } from "@/app/configs";
 
+// lib/flow/config.ts
+import { cache } from "react";
+
 export function generateDefaultFlowSteps(): StepDef {}
 /* ------------------------------------------------------------------ */
 /* Fetchers (server-only). Swap bodies for real I/O.                   */
 /* ------------------------------------------------------------------ */
 
 /** Returns the full site config (theme, site info, flow) for a brand key. */
-export async function getSiteConfig(
-  brand: string,
-): Promise<DefaultConfig | null> {
+export const getSiteConfig = cache(async (brand: string): Promise<DefaultConfig | null> => {
   return configs[brand] ?? null;
-}
+});
 
 /** Returns only the flow/funnel config for a brand key. */
 export async function getFlowConfig(brand: string): Promise<FlowConfig | null> {

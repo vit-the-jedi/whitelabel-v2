@@ -1,5 +1,5 @@
 /**
- * Quote layout — a SERVER component.
+ * Lander layout — a SERVER component.
  *
  * Brand is resolved from the `x-site-config` request header set by middleware,
  * not from the URL. This means the same route tree serves every brand;
@@ -21,9 +21,7 @@ import { getConfigKeyForHost } from "./configs";
 
 import { landerComponentMap } from "./LanderComponentMap";
 
-const getLander = async (brandKey: string) => {
-  const pathname = (await headers()).get("x-pathname") ?? "/";
-
+const getLander = (brandKey: string, pathname: string) => {
   if (pathname === "/") {
     return landerComponentMap[brandKey];
   }
@@ -41,7 +39,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function LanderLayout({ children }: { children: ReactNode }) {
-  const brand = (await headers()).get("x-site-config");
+  const requestHeaders = await headers();
+  const brand = requestHeaders.get("x-site-config");
   if (!brand) notFound();
 
   const siteConfig = await getSiteConfig(brand);
@@ -51,8 +50,19 @@ export default async function LanderLayout({ children }: { children: ReactNode }
   const font = getFontForConfig(theme.googleFont);
 
   const brandKey = getConfigKeyForHost(brand) ?? "searchmynewjob";
-  const Lander = await getLander(brandKey);
+  const pathname = requestHeaders.get("x-pathname") ?? "/";
+  const Lander = getLander(brandKey, pathname);
 
+  const requestState = {
+    brand,
+    siteConfig,
+    theme,
+    site,
+    features,
+    flow,
+    font,
+    brandKey,
+  };
   return (
     <html>
       <head>
