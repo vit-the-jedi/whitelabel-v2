@@ -16,7 +16,8 @@ const enrichData = (data: Record<string, any>) => {
 export async function POST(request: NextRequest) {
   const body = await request.json();
 
-  const enrichedBody = enrichData(body);
+  body.source_token = "1d0d4bab-56e2-4994-9b51-c887c28407bb";
+  //const enrichedBody = enrichData(body);
 
   // Call the other API
   const upstream = await fetch("https://matching.platform.ue.co/ping", {
@@ -25,16 +26,13 @@ export async function POST(request: NextRequest) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.MASTODON_TOKEN}`,
     },
-    body: JSON.stringify(enrichedBody),
+    body: JSON.stringify(body),
   });
 
   if (!upstream.ok) {
     console.log(upstream.status);
     console.log(await upstream.text());
-    return NextResponse.json(
-      { error: `Upstream failed (${upstream.status})` },
-      { status: upstream.status },
-    );
+    return NextResponse.json({ error: `Upstream failed (${upstream.status})` }, { status: upstream.status });
   }
 
   const data = await upstream.json();

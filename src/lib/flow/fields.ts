@@ -59,6 +59,7 @@ type FieldMeta<V> = {
    * Omit for applicant/driver fields — those scope per step (names are shared).
    */
   scope?: Exclude<FlowScope, "applicant" | "driver">;
+  system?: Boolean;
 };
 
 type FieldRegistry = { [K in FlowFieldName]?: FieldMeta<ValueOf<K>> };
@@ -105,6 +106,7 @@ export const FIELD_REGISTRY = {
       { value: "Below average", label: "Below average" },
       { value: "Poor", label: "Poor" },
     ],
+    system: true,
   },
 
   // household
@@ -134,7 +136,7 @@ export const FIELD_REGISTRY = {
       { value: "Domestic Partner", label: "Domestic Partner" },
     ],
   },
-  good_student: { label: "Good student?", kind: "boolean" },
+  good_student: { label: "Good student?", kind: "boolean", system: true },
   sr_22: { label: "Do you need an SR-22?", kind: "boolean" },
 
   // vehicle
@@ -152,12 +154,13 @@ export const FIELD_REGISTRY = {
       { value: "lease", label: "Lease" },
       { value: "other", label: "Other" },
     ],
+    system: true,
   },
   annual_mileage: { label: "Annual mileage", kind: "number", scope: "vehicle" },
-  alarm: { label: "Anti-theft alarm?", kind: "boolean", scope: "vehicle" },
+  alarm: { label: "Anti-theft alarm?", kind: "boolean", scope: "vehicle", system: true },
 
   // incident
-  incident_date: { label: "Incident date", kind: "text", scope: "incident" },
+  incident_date: { label: "Incident date", kind: "text", scope: "incident", system: true },
 } satisfies FieldRegistry;
 
 export type RegisteredField = keyof typeof FIELD_REGISTRY;

@@ -21,7 +21,20 @@ export function generateDefaultFlowSteps(): Record<string, StepDef> {
       fields: [field(name)],
       next: nextName ? [{ to: nextName }] : [],
     };
+
+    //override next trabnsition for the last step and force to feed
+    if (index + 1 === names.length) steps[name].next = [{ to: "feed" }];
   });
+
+  //add feed step
+  steps.feed = {
+    id: "feed",
+    title: "feed",
+    fields: [],
+    terminal: true,
+    next: [],
+    load: "getFeedFromMastodon",
+  };
 
   //last step needs {terminal: true} in the next:[] array
   //either that or we shove /feed page automatically at the end
