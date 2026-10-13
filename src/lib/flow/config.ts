@@ -3,37 +3,13 @@
  * never ships to the client.
  */
 
-import type { Draft, FlowConfig, StepDef } from "./types";
+import type { Draft, FlowConfig } from "./types";
 import type { DefaultConfig } from "@/app/configs/defaultConfigs";
 import { configs } from "@/app/configs";
 
 // lib/flow/config.ts
 import { cache } from "react";
 
-export function generateDefaultFlowSteps(): Record<string, StepDef> {
-  return {
-    zip: {
-      id: "zip",
-      title: "Where do you live?",
-      fields: [
-        {
-          name: "zipcode",
-          label: "ZIP code",
-          kind: "zip",
-          required: true,
-        },
-      ],
-      next: [{ to: "thankyou" }],
-    },
-    thankyou: {
-      id: "thankyou",
-      title: "Thanks — we are getting your quote ready.",
-      fields: [],
-      next: [],
-      terminal: true,
-    },
-  };
-}
 /* ------------------------------------------------------------------ */
 /* Fetchers (server-only). Swap bodies for real I/O.                   */
 /* ------------------------------------------------------------------ */

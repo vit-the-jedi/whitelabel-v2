@@ -14,6 +14,7 @@ import type {
   StepDef,
   StepDraft,
 } from "./types";
+import { resolveScope } from "./fields";
 import { policyExpirationMonths, type PolicyExpiration } from "./options";
 
 /** scope -> the MastodonData array it writes into. */
@@ -135,7 +136,7 @@ export function applyStepDraft(
 ): MastodonData {
   console.log(step);
   const values = collectValues(step, draft);
-  const scope = step.scope ?? "applicant";
+  const scope = resolveScope(step);
   if (scope === "applicant") {
     // Cast: `values` is keyed by FlowFieldName at the config layer.
     return { ...data, ...values } as MastodonData;
@@ -157,7 +158,7 @@ export function seedDraft(
   cursors: Cursors,
 ): StepDraft {
   if (!step) return {};
-  const scope = step.scope ?? "applicant";
+  const scope = resolveScope(step);
   const src: EntityRow =
     scope === "applicant"
       ? (data as EntityRow)

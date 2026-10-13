@@ -15,7 +15,7 @@ export default async function QuotePage({ config, slug }: { config: DefaultConfi
 
   return (
     <section>
-      <h1>{stepDef.title}</h1>
+      {/* <h1>{stepDef.title}</h1> */}
       {stepDef.description && <p>{stepDef.description}</p>}
       <StepGuard urlStepId={stepId} />
 

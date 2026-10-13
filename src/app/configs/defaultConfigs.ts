@@ -1,4 +1,4 @@
-import { generateDefaultFlowSteps } from "@/lib/flow/config";
+import { generateDefaultFlowSteps } from "@/lib/flow/defaultSteps";
 import type { FlowConfig } from "@/lib/flow/types";
 import type { JobsConfig, Vertical } from "./verticals";
 
@@ -111,7 +111,7 @@ export const defaultConfig: DefaultConfig = {
   },
   flow: {
     brand: "default",
-    startStep: "zip",
+    startStep: "zipcode",
     steps: generateDefaultFlowSteps(),
   },
 };

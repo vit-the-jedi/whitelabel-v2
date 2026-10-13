@@ -22,15 +22,7 @@
  */
 
 import { useRouter } from "next/navigation";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, type ReactNode } from "react";
 
 import {
   applyStepDraft,
@@ -40,21 +32,11 @@ import {
   validateStep,
   type ValidationResult,
 } from "@/lib/flow/logic";
-import {
-  buildInitialState,
-  flowReducer,
-  isReachable,
-  type FlowState,
-} from "@/lib/flow/machine";
+import { buildInitialState, flowReducer, isReachable, type FlowState } from "@/lib/flow/machine";
+import { requiredLoader } from "@/lib/flow/fields";
 import { resolvers } from "@/lib/flow/resolvers";
 import { LoaderResult, loaders } from "@/lib/flow/loaders";
-import type {
-  AnswerMap,
-  AnswerValue,
-  FlowScope,
-  MastodonData,
-  StepDraft,
-} from "@/lib/flow/types";
+import type { AnswerMap, AnswerValue, FlowScope, MastodonData, StepDraft } from "@/lib/flow/types";
 
 /* ------------------------------------------------------------------ */
 /* Contexts                                                            */
@@ -77,10 +59,7 @@ export type SubmitOptions = {
 type FlowActions = {
   /** Validate + commit a step's draft, run any resolver, branch, navigate.
    *  Returns validation errors if the step is invalid (no transition). */
-  submitStep: (
-    draft: StepDraft,
-    opts?: SubmitOptions,
-  ) => Promise<ValidationResult>;
+  submitStep: (draft: StepDraft, opts?: SubmitOptions) => Promise<ValidationResult>;
   goBack: () => void;
   /** Edit-from-review: jump to an already-completed step. */
   jumpTo: (stepId: string) => void;
@@ -122,6 +101,16 @@ export function QuoteProvider({
       const raw = sessionStorage.getItem(storageKey);
       if (!raw) return;
       const saved = JSON.parse(raw) as Partial<FlowState>;
+      // Saved progress can outlive the config (renamed/removed steps, or another
+      // flow sharing this brand key). Resuming onto a step that no longer exists
+      // would redirect to a dead URL, so discard it and start fresh.
+      const steps = initialState.config.steps;
+      const stale =
+        (saved.currentStepId && !(saved.currentStepId in steps)) || saved.visited?.some((id) => !(id in steps));
+      if (stale) {
+        sessionStorage.removeItem(storageKey);
+        return;
+      }
       // HYDRATE restores currentStepId/visited/answers into the reducer.
       dispatch({ type: "HYDRATE", payload: saved });
       // Align the URL to the resumed step. Use router.replace directly — NOT
@@ -142,30 +131,22 @@ export function QuoteProvider({
     if (typeof window === "undefined") return;
     const { answers, currentStepId, visited, cursors, flags } = state;
     try {
-      sessionStorage.setItem(
-        storageKey,
-        JSON.stringify({ answers, currentStepId, visited, cursors, flags }),
-      );
+      sessionStorage.setItem(storageKey, JSON.stringify({ answers, currentStepId, visited, cursors, flags }));
     } catch {
       /* storage full/blocked — non-fatal */
     }
-  }, [
-    storageKey,
-    state.answers,
-    state.currentStepId,
-    state.visited,
-    state.cursors,
-    state.flags,
-  ]);
+  }, [storageKey, state.answers, state.currentStepId, state.visited, state.cursors, state.flags]);
 
   const load = useCallback<FlowActions["load"]>(
     async (stepAnswers) => {
       const step = state.config.steps[state.currentStepId];
       const merged = { ...state.answers, ...stepAnswers };
-      if (step.load) {
+      // Field-mandated loaders win over (and can't be removed by) step.load.
+      const loadKind = requiredLoader(step) ?? step.load;
+      if (loadKind) {
         dispatch({ type: "BEGIN_LOADING" });
         try {
-          const { options, data } = await loaders[step.load](merged);
+          const { options, data } = await loaders[loadKind](merged);
           if (options) {
             dispatch({ type: "SET_FIELD_OPTIONS", options });
           }
@@ -182,8 +163,7 @@ export function QuoteProvider({
           return {};
         } catch (err) {
           console.log("Loader error", err);
-          const message =
-            err instanceof Error ? err.message : "Something went wrong.";
+          const message = err instanceof Error ? err.message : "Something went wrong.";
           dispatch({ type: "LOAD_ERROR", error: message });
           // Sentry.captureException(err) — this branch is your error hook.
           return { errors: {} }; // submit was valid; the load failed
@@ -235,15 +215,12 @@ export function QuoteProvider({
       if (step.resolve) {
         dispatch({ type: "BEGIN_RESOLVE" });
         try {
-          const { mergeData, fieldData, options } = await resolvers[
-            step.resolve
-          ]({ data: nextData });
+          const { mergeData, fieldData, options } = await resolvers[step.resolve]({ data: nextData });
           if (options) dispatch({ type: "SET_FIELD_OPTIONS", options });
           if (fieldData) dispatch({ type: "SET_FIELD_DATA", fieldData });
           if (mergeData) nextData = { ...nextData, ...mergeData };
         } catch (err) {
-          const message =
-            err instanceof Error ? err.message : "Something went wrong.";
+          const message = err instanceof Error ? err.message : "Something went wrong.";
           dispatch({ type: "RESOLVE_ERROR", error: message });
           // Sentry.captureException(err) — this branch is your error hook.
           return { ok: true, errors: {} }; // submit was valid; the resolve failed
@@ -306,9 +283,7 @@ export function QuoteProvider({
   return (
     <BasePathContext.Provider value={basePath}>
       <FlowStateContext.Provider value={state}>
-        <FlowActionsContext.Provider value={actions}>
-          {children}
-        </FlowActionsContext.Provider>
+        <FlowActionsContext.Provider value={actions}>{children}</FlowActionsContext.Provider>
       </FlowStateContext.Provider>
     </BasePathContext.Provider>
   );
@@ -320,15 +295,13 @@ export function QuoteProvider({
 
 export function useFlowState(): FlowState {
   const ctx = useContext(FlowStateContext);
-  if (!ctx)
-    throw new Error("useFlowState must be used within <QuoteProvider>.");
+  if (!ctx) throw new Error("useFlowState must be used within <QuoteProvider>.");
   return ctx;
 }
 
 export function useFlowActions(): FlowActions {
   const ctx = useContext(FlowActionsContext);
-  if (!ctx)
-    throw new Error("useFlowActions must be used within <QuoteProvider>.");
+  if (!ctx) throw new Error("useFlowActions must be used within <QuoteProvider>.");
   return ctx;
 }
 

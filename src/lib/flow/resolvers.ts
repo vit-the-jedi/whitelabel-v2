@@ -17,10 +17,7 @@ export type ResolverResult = {
   options?: Record<string, { value: string; label: string }[]>;
 };
 
-export type Resolver = (
-  answers: AnswerMap,
-  signal?: AbortSignal,
-) => Promise<ResolverResult>;
+export type Resolver = (answers: AnswerMap, signal?: AbortSignal) => Promise<ResolverResult>;
 
 export const resolvers: Record<ResolveKind, Resolver> = {
   /** Calls the rater for carrier availability/pricing. STUB. */
