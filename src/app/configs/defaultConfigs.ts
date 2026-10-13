@@ -61,7 +61,7 @@ export type DefaultConfig = {
   jobs?: JobsConfig;
 };
 
-const defaultConfig: DefaultConfig = {
+export const defaultConfig: DefaultConfig = {
   vertical: "auto-insurance",
   site: {
     name: "My Site",
@@ -115,5 +115,60 @@ const defaultConfig: DefaultConfig = {
     steps: generateDefaultFlowSteps(),
   },
 };
+
+export const defaultJobsConfig: DefaultJobsConfig = {
+  vertical: "jobs",
+  site: {
+    name: "My Site",
+    title: "Welcome to My Site",
+    description: "Default site configuration",
+    url: "https://example.com",
+    email: "",
+    logo: "default-logo.png",
+    nav: {
+      text: "",
+    },
+    complianceLinks: {
+      privacyPolicy: "",
+      terms: "",
+      californiaPrivacy: "",
+    },
+    redirectUrl: "https://simplyjobs.com",
+    footerContent: [],
+  },
+  theme: {
+    primaryColor: "#007bff",
+    secondaryColor: "#6c757d",
+    fontFamily: "Nunito Sans, sans-serif",
+    radioButtonColor: "#007bff",
+    fonts: [],
+  },
+  features: {
+    ringba: {
+      enabled: false,
+      id: "",
+      scriptUrl: "",
+    },
+    GA: {
+      id: "",
+      enabled: false,
+      scriptUrl: "",
+    },
+    GTM: {
+      id: "",
+      enabled: false,
+      scriptUrl: "",
+    },
+    maxmind: {
+      enabled: false,
+      scriptUrl: "",
+    },
+  },
+};
+
+export interface DefaultJobsConfig extends DefaultConfig {
+  /** Only used by the "jobs" vertical. */
+  jobs?: JobsConfig;
+}
 
 export default defaultConfig;

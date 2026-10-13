@@ -7,5 +7,6 @@ import dynamic from "next/dynamic";
  * file; adding a new vertical adds exactly one entry here.
  */
 export const landerComponentMap: Record<string, any> = {
-  jobs: dynamic(() => import("@/components/Landers/JobsLander")),
+  jobs: dynamic(() => import("@/components/landers/jobs/JobsLander")),
+  "auto-insurance": dynamic(() => import("@/components/landers/auto-insurance/AutoInsuranceLander")),
 };

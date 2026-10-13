@@ -1,5 +1,6 @@
-import defaultConfig, { type DefaultConfig } from "@/app/configs/defaultConfig";
+import { defaultConfig } from "@/app/configs/defaultConfigs";
 import { mergeConfig, type DeepPartial } from "@/app/configs/mergeConfig";
+import type { DefaultConfig } from "@/app/configs/defaultConfigs";
 
 const protectComOverrides = {
   site: {
@@ -50,10 +51,7 @@ const protectComOverrides = {
   },
 } satisfies DeepPartial<DefaultConfig>;
 
-const protectComConfig: DefaultConfig = mergeConfig(
-  defaultConfig,
-  protectComOverrides,
-);
+const protectComConfig: DefaultConfig = mergeConfig(defaultConfig, protectComOverrides);
 
 export const subdomainConfigs: Record<string, DeepPartial<DefaultConfig>> = {
   auto: {

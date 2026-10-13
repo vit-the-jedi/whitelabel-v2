@@ -1,4 +1,8 @@
-import defaultConfig, { type DefaultConfig } from "@/app/configs/defaultConfig";
+import {
+  defaultJobsConfig as defaultConfig,
+  DefaultJobsConfig,
+  type DefaultConfig,
+} from "@/app/configs/defaultConfigs";
 import { mergeConfig, type DeepPartial } from "@/app/configs/mergeConfig";
 
 const searchMyNewJobOverrides = {
@@ -59,10 +63,10 @@ const searchMyNewJobOverrides = {
       { name: "McDonald's", slug: "mcdonalds" },
     ],
   },
-} satisfies DeepPartial<DefaultConfig>;
+} satisfies DeepPartial<DefaultJobsConfig>;
 
-const searchMyNewJobConfig: DefaultConfig = mergeConfig(defaultConfig, searchMyNewJobOverrides);
+const searchMyNewJobConfig: DefaultJobsConfig = mergeConfig(defaultConfig, searchMyNewJobOverrides);
 
-export const subdomainConfigs: Record<string, DeepPartial<DefaultConfig>> = {};
+export const subdomainConfigs: Record<string, DeepPartial<DefaultJobsConfig>> = {};
 
 export default searchMyNewJobConfig;

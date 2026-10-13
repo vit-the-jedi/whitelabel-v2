@@ -253,6 +253,6 @@ export function validateStep(
 /* ------------------------------------------------------------------ */
 
 /** The single place step ids become URLs. Keeps routing a thin view. */
-export function stepPath(stepId: string): string {
-  return `/quote/${stepId}`;
+export function stepPath(stepId: string, basePath = "/quote"): string {
+  return `${basePath}/${stepId}`;
 }

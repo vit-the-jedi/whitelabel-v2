@@ -18,7 +18,7 @@ import { GoogleTagManager } from "@next/third-parties/google";
 import { getSiteConfig } from "@/lib/flow/config";
 import { getFontForConfig } from "@/lib/fonts";
 
-import { landerComponentMap } from "./LanderComponentMap";
+import { landerComponentMap } from "./mappings/LanderComponentMap";
 
 const getLander = (vertical: string, pathname: string) => {
   if (pathname === "/") {
@@ -40,13 +40,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function LanderLayout({ children }: { children: ReactNode }) {
   const requestHeaders = await headers();
   const brand = requestHeaders.get("x-site-config");
+
   if (!brand) notFound();
 
   const siteConfig = await getSiteConfig(brand);
   if (!siteConfig) notFound();
   // The "quote" vertical is meaningless without a flow; other verticals
   // (e.g. "jobs") don't have one at all.
-  if (siteConfig.vertical === "auto-insurance" && !siteConfig.flow) notFound();
+  // if (siteConfig.vertical === "auto-insurance" && !siteConfig.flow) notFound();
 
   const { theme, features } = siteConfig;
   const font = getFontForConfig(theme.googleFont);

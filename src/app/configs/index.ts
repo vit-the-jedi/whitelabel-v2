@@ -2,8 +2,7 @@ import protectCom, { subdomainConfigs as protectComSubdomains } from "./protect.
 import freeInsuranceQuotes, { subdomainConfigs as freeInsuranceQuotesSubdomains } from "./free-insurance-quotes.us/";
 import searchMyNewJobConfig, { subdomainConfigs as searchMyNewJobSubdomains } from "./searchmynewjob.com";
 import simplyJobsConfig from "./simplyjobs.com";
-import { type DefaultConfig } from "@/app/configs/defaultConfig";
-import defaultConfig from "@/app/configs/defaultConfig";
+import { defaultConfig, type DefaultConfig } from "@/app/configs/defaultConfigs";
 import { mergeConfig, type DeepPartial } from "@/app/configs/mergeConfig";
 
 export const configs: Record<string, DefaultConfig> = {

@@ -1,12 +1,12 @@
 import Header from "@/components/Header";
-import type { DefaultConfig } from "@/app/configs/defaultConfig";
+import type { DefaultConfig, DefaultJobsConfig } from "@/app/configs/defaultConfigs";
 
 /**
  * Shared lander template for every brand on the "jobs" vertical. Content
  * (copy, categories, companies, links) comes entirely from `siteConfig.jobs`
  * — a new job-search site is a config file, not a new component.
  */
-export default function JobsLander({ siteConfig }: { siteConfig: DefaultConfig }) {
+export default function JobsLander({ siteConfig }: { siteConfig: DefaultJobsConfig }) {
   const { site, jobs } = siteConfig;
   if (!jobs) return null;
 

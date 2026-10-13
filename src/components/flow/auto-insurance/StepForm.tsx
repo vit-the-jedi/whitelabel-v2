@@ -15,7 +15,7 @@
 import { useEffect, useState } from "react";
 
 import { useFlowActions, useFlowState } from "./QuoteProvider";
-import { useParamsActions, useParamsState } from "../utils/ParamsProvider";
+//import { useParamsActions, useParamsState } from "./ParamsP";
 import { seedDraft } from "@/lib/flow/logic";
 import type { AnswerValue, ExtraButton, FieldDef } from "@/lib/flow/types";
 
@@ -33,7 +33,7 @@ export function StepForm({ stepId }: { stepId: string }) {
   useEffect(() => {
     const loadData = async () => {
       await load(state.answers);
-      updateParams({ lastStep: stepId });
+      //updateParams({ lastStep: stepId });
     };
     loadData();
   }, [state.answers]);
@@ -42,12 +42,11 @@ export function StepForm({ stepId }: { stepId: string }) {
   // resolved + notFound()-guarded it). Falling back to currentStepId only if
   // the prop is somehow missing. Using currentStepId directly is unsafe — it
   // can be stale (HMR while editing config, or refresh before draft-resume).
-  const step =
-    state.config.steps[stepId] ?? state.config.steps[state.currentStepId];
+  const step = state.config.steps[stepId] ?? state.config.steps[state.currentStepId];
   const fields: FieldDef[] = step?.fields ?? [];
 
   //const paramsState = useParamsState();
-  const { updateParams } = useParamsActions();
+  //const { updateParams } = useParamsActions();
 
   // Seed local draft from already-committed answers, scoped to this step's
   // entity + cursor (so Back/edit pre-fills; dob_* decomposed from date_of_birth).
@@ -56,8 +55,7 @@ export function StepForm({ stepId }: { stepId: string }) {
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const setField = (name: string, value: AnswerValue) =>
-    setDraft((d) => ({ ...d, [name]: value }));
+  const setField = (name: string, value: AnswerValue) => setDraft((d) => ({ ...d, [name]: value }));
 
   const onSubmit = async () => {
     setErrors({});
@@ -109,10 +107,7 @@ export function StepForm({ stepId }: { stepId: string }) {
       {!isLoading &&
         fields.map((field) => (
           <div key={field.name} style={{ marginBottom: 12 }}>
-            <label
-              htmlFor={field.name}
-              style={{ display: "block", fontWeight: 600 }}
-            >
+            <label htmlFor={field.name} style={{ display: "block", fontWeight: 600 }}>
               {field.label}
             </label>
 
@@ -124,8 +119,7 @@ export function StepForm({ stepId }: { stepId: string }) {
               >
                 <option value="">Select…</option>
                 {resolvedOptions(field)?.map((o: Record<string, string>) => {
-                  const opt =
-                    typeof o === "string" ? { value: o, label: o } : o;
+                  const opt = typeof o === "string" ? { value: o, label: o } : o;
                   return (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
@@ -189,12 +183,7 @@ export function StepForm({ stepId }: { stepId: string }) {
         </button>
 
         {step?.extraButtons?.map((btn) => (
-          <button
-            type="button"
-            onClick={() => runExtraButton(btn)}
-            disabled={resolving}
-            key={btn.label}
-          >
+          <button type="button" onClick={() => runExtraButton(btn)} disabled={resolving} key={btn.label}>
             {btn.label}
           </button>
         ))}

@@ -1,19 +1,20 @@
 /**
- * Quote layout — a SERVER component.
+ * Flow layout — a SERVER component.
  *
- * Brand is resolved from the `x-site-config` request header set by middleware,
- * not from the URL. This means the same route tree serves every brand;
- * whitelabeling is purely domain-driven.
+ * Brand is resolved from the request config (domain-driven via middleware),
+ * not from the URL. Mounted here, not in a page, so the QuoteProvider state
+ * survives soft navigation between steps. Verticals without a `flow` (e.g.
+ * jobs) render their children without the provider.
  */
 
-import { Metadata } from "next";
-import { cookies, headers } from "next/headers";
-import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 
-import { QuoteProvider } from "@/components/quote/QuoteProvider";
+import { getRequestConfig } from "@/app/configs/getRequestConfig";
+import { QuoteProvider } from "@/components/flow/auto-insurance/QuoteProvider";
 import { ParamsProvider } from "@/components/utils/ParamsProvider";
-import { getDraft, getSiteConfig } from "@/lib/flow/config";
+import { getDraft } from "@/lib/flow/config";
 import { buildInitialState } from "@/lib/flow/machine";
 import { getFontForConfig } from "@/lib/fonts";
 
@@ -22,14 +23,10 @@ export const metadata: Metadata = {
   description: "Answer a few questions to get your free insurance quote.",
 };
 
-export default async function QuoteLayout({ children }: { children: ReactNode }) {
-  const brand = (await headers()).get("x-site-config");
-  if (!brand) notFound();
+export default async function FlowLayout({ children }: { children: ReactNode }) {
+  const { theme, flow } = await getRequestConfig();
+  if (!flow) return <>{children}</>;
 
-  const siteConfig = await getSiteConfig(brand);
-  if (!siteConfig || !siteConfig.flow) notFound();
-
-  const { theme, site, flow } = siteConfig;
   const font = getFontForConfig(theme.googleFont);
 
   const quoteId = (await cookies()).get("quoteId")?.value ?? crypto.randomUUID();
@@ -49,7 +46,7 @@ export default async function QuoteLayout({ children }: { children: ReactNode })
       }
     >
       <main style={{ maxWidth: 560, margin: "0 auto", padding: 16 }}>
-        <QuoteProvider initialState={initialState}>
+        <QuoteProvider initialState={initialState} basePath="/1/quote">
           <ParamsProvider initialParams={{}}>{children}</ParamsProvider>
         </QuoteProvider>
       </main>

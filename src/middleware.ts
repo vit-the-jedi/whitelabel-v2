@@ -14,8 +14,6 @@ export default function proxy(request: NextRequest) {
   const domainParam = queryParams.get("domain");
   const effectiveDomain = domainCookie ?? domainParam ?? domain;
 
-  console.log(effectiveDomain);
-
   requestHeaders.set("x-site-domain", effectiveDomain);
   requestHeaders.set("x-site-host", effectiveDomain);
   requestHeaders.set("x-pathname", request.nextUrl.pathname);

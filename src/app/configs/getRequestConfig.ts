@@ -1,16 +1,14 @@
 import { headers } from "next/headers";
 import { configs, getConfigForHost, getSubdomainConfig } from "./index";
 import { mergeConfig } from "./mergeConfig";
-import type { DefaultConfig } from "./defaultConfig";
+import type { DefaultConfig } from "./defaultConfigs";
 
 export const getRequestConfig = async (): Promise<DefaultConfig> => {
   const requestHeaders = await headers();
   const domain = requestHeaders.get("x-site-domain") ?? "";
   const subdomain = requestHeaders.get("x-site-subdomain") ?? "";
 
-  const baseConfig: DefaultConfig = domain && domain in configs
-    ? configs[domain]
-    : getConfigForHost(domain);
+  const baseConfig: DefaultConfig = domain && domain in configs ? configs[domain] : getConfigForHost(domain);
 
   if (subdomain) {
     const overrides = getSubdomainConfig(domain, subdomain);

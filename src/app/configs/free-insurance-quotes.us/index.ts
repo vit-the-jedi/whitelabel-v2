@@ -1,4 +1,4 @@
-import defaultConfig, { type DefaultConfig } from "@/app/configs/defaultConfig";
+import { type DefaultConfig, defaultConfig } from "@/app/configs/defaultConfigs";
 import { mergeConfig, type DeepPartial } from "@/app/configs/mergeConfig";
 
 import { CURRENT_COMPANY_OPTIONS, toFieldOptions } from "@/lib/flow/options";
@@ -17,8 +17,7 @@ const freeInsuranceQuotesOverrides = {
     complianceLinks: {
       privacyPolicy: "https://www.free-insurance-quotes.us/privacy-policy/",
       terms: "https://www.free-insurance-quotes.us/terms-and-conditions/",
-      californiaPrivacy:
-        "https://www.free-insurance-quotes.us/california-privacy-policy/",
+      californiaPrivacy: "https://www.free-insurance-quotes.us/california-privacy-policy/",
     },
     redirectUrl: "https://insure.free-insurance-quotes.us",
     footerContent: [
@@ -244,9 +243,7 @@ const freeInsuranceQuotesOverrides = {
         id: "zip",
         title: "Where do you live?",
         scope: "applicant",
-        fields: [
-          { name: "zipcode", label: "ZIP code", kind: "zip", required: true },
-        ],
+        fields: [{ name: "zipcode", label: "ZIP code", kind: "zip", required: true }],
         next: [{ to: "vehicle-year" }],
       },
       "marital-status": {
@@ -386,10 +383,7 @@ const freeInsuranceQuotesOverrides = {
   },
 } satisfies DeepPartial<DefaultConfig>;
 
-const freeInsuranceQuotesConfig: DefaultConfig = mergeConfig(
-  defaultConfig,
-  freeInsuranceQuotesOverrides,
-);
+const freeInsuranceQuotesConfig: DefaultConfig = mergeConfig(defaultConfig, freeInsuranceQuotesOverrides);
 
 export const subdomainConfigs: Record<string, DeepPartial<DefaultConfig>> = {
   apply: {

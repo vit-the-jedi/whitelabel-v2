@@ -1,4 +1,8 @@
-import defaultConfig, { type DefaultConfig } from "@/app/configs/defaultConfig";
+import {
+  defaultJobsConfig as defaultConfig,
+  DefaultJobsConfig,
+  type DefaultConfig,
+} from "@/app/configs/defaultConfigs";
 import { mergeConfig, type DeepPartial } from "@/app/configs/mergeConfig";
 
 const simplyJobsOverrides = {
@@ -82,7 +86,28 @@ const simplyJobsOverrides = {
       { name: "Wendy's", slug: "wendys-jobs" },
     ],
   },
-} satisfies DeepPartial<DefaultConfig>;
+  flow: {
+    brand: "simplyjobs",
+    startStep: "job-submit",
+    steps: {
+      "job-submit": {
+        id: "job-submit",
+        title: "Job Submit",
+        fields: [
+          {
+            name: "feed",
+            label: "Mastodon feed data",
+            kind: "text",
+            required: false,
+            uiOnly: true,
+          },
+        ],
+        load: "getCompanyFromAli",
+        //next: [{ to: "vehicle-year" }],
+      },
+    },
+  },
+} satisfies DeepPartial<DefaultJobsConfig>;
 
 const simplyJobsConfig: DefaultConfig = mergeConfig(defaultConfig, simplyJobsOverrides);
 

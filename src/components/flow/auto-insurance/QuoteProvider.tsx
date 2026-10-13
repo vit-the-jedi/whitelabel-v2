@@ -89,15 +89,21 @@ type FlowActions = {
 
 const FlowActionsContext = createContext<FlowActions | null>(null);
 
+/** URL prefix step ids are appended to (e.g. "/quote" or "/1/quote"). */
+const BasePathContext = createContext<string>("/quote");
+
 /* ------------------------------------------------------------------ */
 /* Provider                                                            */
 /* ------------------------------------------------------------------ */
 
 export function QuoteProvider({
   initialState,
+  basePath = "/quote",
   children,
 }: {
   initialState: FlowState;
+  /** Route prefix the flow is mounted under; step URLs are `${basePath}/${stepId}`. */
+  basePath?: string;
   children: ReactNode;
 }) {
   const [state, dispatch] = useReducer(flowReducer, initialState);
@@ -123,7 +129,7 @@ export function QuoteProvider({
       // initial (empty) state, so its isReachable() guard would reject the
       // saved step. router.replace doesn't depend on reducer state.
       if (saved.currentStepId) {
-        router.replace(stepPath(saved.currentStepId));
+        router.replace(stepPath(saved.currentStepId, basePath));
       }
     } catch {
       /* corrupt/blocked storage — ignore and start fresh */
@@ -267,26 +273,26 @@ export function QuoteProvider({
         visited: [...state.visited, state.currentStepId],
         currentStepId: nextStepId,
       });
-      router.push(stepPath(nextStepId));
+      router.push(stepPath(nextStepId, basePath));
       return { ok: true, errors: {} };
     },
-    [state, router, persist],
+    [state, router, persist, basePath],
   );
 
   const goBack = useCallback(() => {
     if (state.visited.length === 0) return;
     const prev = state.visited[state.visited.length - 1];
     dispatch({ type: "GO_BACK" });
-    router.push(stepPath(prev));
-  }, [state, router]);
+    router.push(stepPath(prev, basePath));
+  }, [state, router, basePath]);
 
   const jumpTo = useCallback(
     (stepId: string) => {
       if (!isReachable(state, stepId)) return;
       dispatch({ type: "JUMP_TO_STEP", stepId });
-      router.push(stepPath(stepId));
+      router.push(stepPath(stepId, basePath));
     },
-    [state, router],
+    [state, router, basePath],
   );
 
   // Actions object is referentially stable per state — fine, consumers of
@@ -298,11 +304,13 @@ export function QuoteProvider({
 
   console.log("[QuoteProvider] render", state);
   return (
-    <FlowStateContext.Provider value={state}>
-      <FlowActionsContext.Provider value={actions}>
-        {children}
-      </FlowActionsContext.Provider>
-    </FlowStateContext.Provider>
+    <BasePathContext.Provider value={basePath}>
+      <FlowStateContext.Provider value={state}>
+        <FlowActionsContext.Provider value={actions}>
+          {children}
+        </FlowActionsContext.Provider>
+      </FlowStateContext.Provider>
+    </BasePathContext.Provider>
   );
 }
 
@@ -333,10 +341,11 @@ export function useFlowActions(): FlowActions {
  */
 export function useStepGuard(urlStepId: string): void {
   const state = useFlowState();
+  const basePath = useContext(BasePathContext);
   const router = useRouter();
   useEffect(() => {
     if (!isReachable(state, urlStepId)) {
-      router.replace(stepPath(state.currentStepId));
+      router.replace(stepPath(state.currentStepId, basePath));
     }
-  }, [state, urlStepId, router]);
+  }, [state, urlStepId, router, basePath]);
 }

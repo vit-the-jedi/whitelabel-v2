@@ -51,13 +51,7 @@ export type Transition = {
 /* Steps & fields                                                      */
 /* ------------------------------------------------------------------ */
 
-export type FieldKind =
-  | "text"
-  | "number"
-  | "select"
-  | "zip"
-  | "boolean"
-  | "radio";
+export type FieldKind = "text" | "number" | "select" | "zip" | "boolean" | "radio";
 
 type FieldDefBase = {
   label: string;
@@ -102,7 +96,8 @@ export type LoaderKind =
   | "vehicleYears"
   | "vehicleMakes"
   | "vehicleModels"
-  | "getFeedFromMastodon";
+  | "getFeedFromMastodon"
+  | "getCompanyFromAli";
 /**
  * Which payload entity a step writes into. Applicant fields land at
  * `data[name]`; driver/vehicle/incident fields land at
@@ -200,14 +195,7 @@ export type MastodonDriver = {
   last_name?: string;
   date_of_birth?: string; // "YYYY-MM-DD"
   gender?: "M" | "F" | "X";
-  marital_status?:
-    | "Single"
-    | "Married"
-    | "Divorced"
-    | "Separated"
-    | "Widowed"
-    | "Domestic Partner"
-    | "Unknown";
+  marital_status?: "Single" | "Married" | "Divorced" | "Separated" | "Widowed" | "Domestic Partner" | "Unknown";
   relationship?:
     | "self"
     | "spouse"
@@ -243,12 +231,7 @@ export type MastodonDriver = {
   // | Other | Permit | Probation | Restricted | Revoked | Suspended | Temporary.
   // Widened to string: a successful post used "active" (lowercase).
   license_status?: string;
-  suspended_reason?:
-    | "Failure to pay ticket"
-    | "DUI"
-    | "Received too many tickets"
-    | "No insurance"
-    | "Other";
+  suspended_reason?: "Failure to pay ticket" | "DUI" | "Received too many tickets" | "No insurance" | "Other";
   first_licensed?: number; // age first licensed
   years_employed?: number;
   primary_vehicle?: number; // index into vehicles[]
@@ -317,11 +300,7 @@ export type MastodonData = {
   current_policy_expires?: number; // days until expires
   current_policy_started_months?: number;
   current_policy_expires_months?: number;
-  coverage_type?:
-    | "State Minimum"
-    | "Standard Protection"
-    | "Superior Protection"
-    | "Basic";
+  coverage_type?: "State Minimum" | "Standard Protection" | "Superior Protection" | "Basic";
   credit_rating?: CreditRating;
 
   // desired coverage (dollar amounts)
@@ -447,8 +426,4 @@ export type IncidentField = ScalarKeys<MastodonIncident>;
  * entities, e.g. `first_name`, collapse into the union — scope which entity a
  * step writes to via StepDef, not the name.)
  */
-export type FlowFieldName =
-  | ApplicantField
-  | DriverField
-  | VehicleField
-  | IncidentField;
+export type FlowFieldName = ApplicantField | DriverField | VehicleField | IncidentField;
