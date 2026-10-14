@@ -20,6 +20,9 @@ import { getFontForConfig } from "@/lib/fonts";
 
 import { landerComponentMap } from "./mappings/LanderComponentMap";
 
+import BrandNav from "@/components/BrandNav";
+import BrandFooter from "@/components/BrandFooter";
+
 const getLander = (vertical: string, pathname: string) => {
   if (pathname === "/") {
     return landerComponentMap[vertical] ?? null;
@@ -62,6 +65,7 @@ export default async function LanderLayout({ children }: { children: ReactNode }
         <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
       </head>
       <body>
+        <BrandNav logoUrl={`/images/logos/${brand}/logo.svg`} />
         <div
           className={font.className}
           style={
@@ -76,6 +80,7 @@ export default async function LanderLayout({ children }: { children: ReactNode }
         >
           <main>{Lander ? <Lander siteConfig={siteConfig} /> : children}</main>
         </div>
+        <BrandFooter />
       </body>
     </html>
   );

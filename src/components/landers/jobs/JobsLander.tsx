@@ -1,4 +1,4 @@
-import Header from "@/components/Header";
+import BrandNav from "@/components/BrandNav";
 import type { DefaultConfig, DefaultJobsConfig } from "@/app/configs/defaultConfigs";
 
 /**
@@ -13,7 +13,7 @@ export default function JobsLander({ siteConfig }: { siteConfig: DefaultJobsConf
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col">
       <div className="px-6 border-b">
-        <Header logoUrl={`/images/logos/${site.logo}`} />
+        <BrandNav logoUrl={`/images/logos/${site.logo}`} />
       </div>
 
       <div className="px-6 py-12" style={{ backgroundColor: "var(--primaryColor)" }}>

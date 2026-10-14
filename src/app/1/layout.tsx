@@ -18,11 +18,6 @@ import { getDraft } from "@/lib/flow/config";
 import { buildInitialState } from "@/lib/flow/machine";
 import { getFontForConfig } from "@/lib/fonts";
 
-export const metadata: Metadata = {
-  title: "Get a Quote",
-  description: "Answer a few questions to get your free insurance quote.",
-};
-
 export default async function FlowLayout({ children }: { children: ReactNode }) {
   const { theme, flow } = await getRequestConfig();
   if (!flow) return <>{children}</>;
