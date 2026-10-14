@@ -131,13 +131,22 @@ export function StepForm({ stepId }: { stepId: string }) {
                 })}
               </select>
             ) : field.kind === "boolean" ? (
-              <input
-                id={field.name}
-                className="form-check"
-                type="checkbox"
-                checked={Boolean(draft[field.name])}
-                onChange={(e) => setField(field.name, e.target.checked)}
-              />
+              [true, false].map((bool) => {
+                const derivedValue = bool ? "Yes" : "No";
+                return (
+                  <label key={derivedValue} className="form-option">
+                    <input
+                      name={field.name}
+                      className="form-check"
+                      type="radio"
+                      checked={draft[field.name] === bool}
+                      value={derivedValue}
+                      onChange={() => setField(field.name, bool)}
+                    />
+                    {derivedValue}
+                  </label>
+                );
+              })
             ) : field.kind === "radio" ? (
               resolvedOptions(field)?.map((o: Record<string, string>) => {
                 const opt = typeof o === "string" ? { value: o, label: o } : o;
@@ -191,7 +200,13 @@ export function StepForm({ stepId }: { stepId: string }) {
         </button>
 
         {step?.extraButtons?.map((btn) => (
-          <button type="button" className="btn" onClick={() => runExtraButton(btn)} disabled={resolving} key={btn.label}>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => runExtraButton(btn)}
+            disabled={resolving}
+            key={btn.label}
+          >
             {btn.label}
           </button>
         ))}

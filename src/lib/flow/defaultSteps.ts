@@ -18,7 +18,7 @@ export function generateDefaultFlowSteps(): Record<string, StepDef> {
 
   //only register fields we want to render in the UI
   uiFields.forEach((name, index) => {
-    const nextName = names[index + 1];
+    const nextName = uiFields[index + 1];
     steps[name] = {
       id: name,
       title: FIELD_REGISTRY[name].label,
