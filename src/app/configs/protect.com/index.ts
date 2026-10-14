@@ -5,8 +5,8 @@ import type { DefaultConfig } from "@/app/configs/defaultConfigs";
 const protectComOverrides = {
   site: {
     name: "protect.com",
-    title: "Protect.com",
-    description: "Protect.com site configuration",
+    title: "Compare Insurance Quotes For Auto, Home & Health | Protect.com ",
+    description: "Compare Insurance Quotes For Auto & Home | Protect.com ",
     url: "https://protect.com",
     logo: "protect_logo.png",
     nav: {

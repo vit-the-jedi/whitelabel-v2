@@ -59,10 +59,10 @@ type FieldMeta<V> = {
    * Omit for applicant/driver fields — those scope per step (names are shared).
    */
   scope?: Exclude<FlowScope, "applicant" | "driver">;
-  system?: Boolean;
+  system?: boolean;
 };
 
-type FieldRegistry = { [K in FlowFieldName]?: FieldMeta<ValueOf<K>> };
+export type FieldRegistry = { [K in FlowFieldName]?: FieldMeta<ValueOf<K>> };
 
 /* ------------------------------------------------------------------ */
 /* Registry                                                            */
@@ -143,7 +143,7 @@ export const FIELD_REGISTRY = {
   year: { label: "Year", kind: "select", loader: "vehicleYears", scope: "vehicle" },
   make: { label: "Make", kind: "select", loader: "vehicleMakes", scope: "vehicle" },
   model: { label: "Model", kind: "select", loader: "vehicleModels", scope: "vehicle" },
-  vin: { label: "VIN", kind: "text", scope: "vehicle" },
+  vin: { label: "VIN", kind: "text", scope: "vehicle", system: true },
   ownership: {
     label: "Ownership",
     kind: "radio",

@@ -106,14 +106,17 @@ export function StepForm({ stepId }: { stepId: string }) {
       {isLoading && <p>Loading options...</p>}
       {!isLoading &&
         fields.map((field) => (
-          <div key={field.name} style={{ marginBottom: 12 }}>
-            <label htmlFor={field.name} style={{ display: "block", fontWeight: 600 }}>
+          <div key={field.name} className="form-field">
+            <label htmlFor={field.name} className="form-label">
               {field.label}
             </label>
 
             {field.kind === "select" ? (
               <select
                 id={field.name}
+                className="form-select"
+                aria-invalid={Boolean(errors[field.name])}
+                aria-describedby={errors[field.name] ? `${field.name}-error` : undefined}
                 value={String(draft[field.name] ?? "")}
                 onChange={(e) => setField(field.name, e.target.value)}
               >
@@ -130,6 +133,7 @@ export function StepForm({ stepId }: { stepId: string }) {
             ) : field.kind === "boolean" ? (
               <input
                 id={field.name}
+                className="form-check"
                 type="checkbox"
                 checked={Boolean(draft[field.name])}
                 onChange={(e) => setField(field.name, e.target.checked)}
@@ -138,8 +142,9 @@ export function StepForm({ stepId }: { stepId: string }) {
               resolvedOptions(field)?.map((o: Record<string, string>) => {
                 const opt = typeof o === "string" ? { value: o, label: o } : o;
                 return (
-                  <label key={opt.value} style={{ display: "block" }}>
+                  <label key={opt.value} className="form-option">
                     <input
+                      className="form-check"
                       type="radio"
                       name={field.name}
                       value={opt.value}
@@ -153,6 +158,9 @@ export function StepForm({ stepId }: { stepId: string }) {
             ) : (
               <input
                 id={field.name}
+                className="form-input"
+                aria-invalid={Boolean(errors[field.name])}
+                aria-describedby={errors[field.name] ? `${field.name}-error` : undefined}
                 type={field.kind === "number" ? "number" : "text"}
                 inputMode={field.kind === "zip" ? "numeric" : undefined}
                 value={String(draft[field.name] ?? "")}
@@ -161,29 +169,29 @@ export function StepForm({ stepId }: { stepId: string }) {
             )}
 
             {errors[field.name] && (
-              <p role="alert" style={{ color: "crimson", margin: "4px 0 0" }}>
+              <p id={`${field.name}-error`} role="alert" className="form-error">
                 {errors[field.name]}
               </p>
             )}
           </div>
         ))}
       {state.status === "error" && state.error && (
-        <p role="alert" style={{ color: "crimson" }}>
+        <p role="alert" className="form-error">
           {state.error}
         </p>
       )}
-      <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+      <div className="form-actions">
         {state.visited.length > 0 && (
-          <button type="button" onClick={goBack} disabled={resolving}>
+          <button type="button" className="btn" onClick={goBack} disabled={resolving}>
             Back
           </button>
         )}
-        <button type="button" onClick={onSubmit} disabled={resolving}>
+        <button type="button" className="btn btn-primary" onClick={onSubmit} disabled={resolving}>
           {resolving ? "Checking…" : "Continue"}
         </button>
 
         {step?.extraButtons?.map((btn) => (
-          <button type="button" onClick={() => runExtraButton(btn)} disabled={resolving} key={btn.label}>
+          <button type="button" className="btn" onClick={() => runExtraButton(btn)} disabled={resolving} key={btn.label}>
             {btn.label}
           </button>
         ))}

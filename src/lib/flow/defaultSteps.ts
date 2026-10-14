@@ -6,14 +6,18 @@
  * was initialized.
  */
 
-import { FIELD_REGISTRY, field, type RegisteredField } from "./fields";
+import { FIELD_REGISTRY, field, type FieldRegistry, type RegisteredField } from "./fields";
 import type { StepDef } from "./types";
 
 export function generateDefaultFlowSteps(): Record<string, StepDef> {
   const names = Object.keys(FIELD_REGISTRY) as RegisteredField[];
   const steps: Record<string, StepDef> = {};
 
-  names.forEach((name, index) => {
+  //filter out fields marked as system only (enrichments)
+  const uiFields = names.filter((name) => !(FIELD_REGISTRY as FieldRegistry)[name]?.system);
+
+  //only register fields we want to render in the UI
+  uiFields.forEach((name, index) => {
     const nextName = names[index + 1];
     steps[name] = {
       id: name,

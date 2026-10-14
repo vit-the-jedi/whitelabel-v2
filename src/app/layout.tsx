@@ -63,6 +63,7 @@ export default async function LanderLayout({ children }: { children: ReactNode }
       <head>
         {features?.GTM?.enabled && <GoogleTagManager gtmId={features?.GTM?.id ?? ""} />}
         <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+        <link rel="icon" type="image/x-icon" href={`/favicon/${brand}/favicon.ico`}></link>
       </head>
       <body>
         <BrandNav logoUrl={`/images/logos/${brand}/logo.svg`} />
